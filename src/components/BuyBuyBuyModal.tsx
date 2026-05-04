@@ -6,6 +6,14 @@ const exchangeRates: { [key: string]: number } = {
   HKD: 4.15, VND: 0.0013, PHP: 0.57, IDR: 0.002, CNY: 4.5, SGD: 24.1
 };
 
+// 幣種符號轉換
+const getCurrencySymbol = (code: string) => {
+  const symbols: { [key: string]: string } = {
+    JPY: '¥', USD: '$', KRW: '₩', EUR: '€', GBP: '£', AUD: 'A$', HKD: 'HK$', CNY: '¥', TWD: '$'
+  };
+  return symbols[code] || code;
+};
+
 interface BuyItem {
   id: number;
   trip: string;
@@ -33,7 +41,6 @@ interface BuyItem {
 const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTrip: string }> = ({ isOpen, onClose, currentTrip }) => {
   const [view, setView] = useState<'LIST' | 'ADD'>('LIST');
   const [items, setItems] = useState<BuyItem[]>([]);
-  const [previewImage, setPreviewImage] = useState<string | null>(null); // 新增：預覽圖片狀態
   
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -84,7 +91,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
     
     const newItem: BuyItem = {
       id: editingId || Date.now(),
-      trip: currentTrip, 
+      trip: currentTrip,
       itemName, quantity, storeName, locationUrl, paymentMethod, date, time,
       selectedType, buyerName, currency, price, taxFreeJpy, image,
       completed: editingId ? (items.find(i => i.id === editingId)?.completed || false) : false,
@@ -104,6 +111,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
 
   const toggleComplete = (id: number) => {
     const allItems = JSON.parse(localStorage.getItem('buy_buy_buy_v10') || '[]');
+    // 修正：將 item 改為 it
     const updatedAll = allItems.map((it: any) => it.id === id ? { ...it, completed: !it.completed } : it);
     
     localStorage.setItem('buy_buy_buy_v10', JSON.stringify(updatedAll));
@@ -153,15 +161,15 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                         <div style={{ fontSize: '22px', fontWeight: '900', ...baseStyle, color: item.completed ? '#444' : 'black', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.itemName}</div>
                         <div style={{ fontSize: '16px', fontWeight: 'bold', color: item.completed ? '#555' : 'black' }}>{item.storeName}</div>
                         
-                        <div onClick={(e) => openLink(e, item.locationUrl)} style={{ display: 'flex', alignItems: 'flex-start', gap: '4px', fontSize: '12px', color: item.completed ? '#666' : (item.locationUrl ? '#007AFF' : '#666'), cursor: 'pointer', textAlign: 'left', marginBottom: '8px' }}>
-                          <MapPin size={13} style={{flexShrink: 0, marginTop: '2px'}} /> 
-                          <span style={{display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{item.locationUrl || '未設定地點'}</span>
+                        <div onClick={(e) => openLink(e, item.locationUrl)} style={{ display: 'flex', alignItems: 'flex-start', gap: '4px', fontSize: '11px', color: item.completed ? '#666' : (item.locationUrl ? '#007AFF' : '#666'), cursor: 'pointer', textAlign: 'left', marginBottom: '8px' }}>
+                          <MapPin size={12} style={{flexShrink: 0}} /> 
+                          <span style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{item.locationUrl || '未設定地點'}</span>
                         </div>
 
-                        {/* 修改：營業時段排版調整 */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 'bold', color: item.completed ? '#666' : '#444' }}>營業時段：</span>
-                          <div style={{ fontSize: '14px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', display: 'flex', flexDirection: 'column' }}>
+                        {/* 佈局修正：左側對齊 */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', whiteSpace: 'nowrap' }}>營業時段：</span>
+                          <div style={{ fontSize: '14px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             <div>{item.time1_start} - {item.time1_end}</div>
                             {item.time2_start && <div>{item.time2_start} - {item.time2_end}</div>}
                           </div>
@@ -169,7 +177,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
-                        <div onClick={() => item.image && setPreviewImage(item.image)} style={{ position: 'relative', cursor: item.image ? 'zoom-in' : 'default' }}>
+                        <div style={{ position: 'relative' }}>
                           {item.image ? (
                             <img src={item.image} style={{ width: '85px', height: '85px', borderRadius: '20px', border: '3px solid black', objectFit: 'cover' }} />
                           ) : (
@@ -178,10 +186,10 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 'bold', color: '#444' }}>
-                             <Clock size={13}/> 打烊: {item.time2_end || item.time1_end}
+                             <Clock size={14}/> 打烊: {item.time2_end || item.time1_end}
                            </div>
                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 'bold', color: '#444' }}>
-                             <Calendar size={13}/> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '－'}
+                             <Calendar size={14}/> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '－'}
                            </div>
                         </div>
                       </div>
@@ -190,7 +198,8 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '900', ...baseStyle }}>
                       <div style={{ fontSize: '20px' }}>數量 : {item.quantity}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '18px' }}>{item.currency} {Number(item.price).toLocaleString()}</span>
+                        {/* 修正：顯示幣種符號 */}
+                        <span style={{ fontSize: '18px' }}>{getCurrencySymbol(item.currency)} {Number(item.price).toLocaleString()}</span>
                         <span style={{ border: '3px solid black', padding: '2px 15px', borderRadius: '20px', backgroundColor: 'white', fontSize: '16px' }}>{item.buyerName}</span>
                       </div>
                     </div>
@@ -243,6 +252,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                 </div>
               </div>
 
+              {/* 分類按鈕 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                 {[{ id: '自己', icon: <User size={18}/> }, { id: '代購', icon: <ShoppingBag size={18}/> }, { id: '伴手禮', icon: <Gift size={18}/> }].map(t => (
                   <button key={t.id} onClick={() => setSelectedType(t.id)} style={{ ...gridInput, backgroundColor: selectedType === t.id ? '#FFD64D' : 'white', height: '50px', flexDirection: 'column', gap: 2 }}>
@@ -289,7 +299,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '10px', alignItems: 'center' }}>
-                <div style={{ fontWeight: '900', ...baseStyle }}>Tax Free ({currency})</div>
+                <div style={{ fontWeight: '900', ...baseStyle }}>Tax Free ({getCurrencySymbol(currency)})</div>
                 <input type="number" style={inputStyle} value={taxFreeJpy} onChange={e => setTaxFreeJpy(e.target.value)} />
               </div>
 
@@ -311,13 +321,6 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
           </div>
         )}
       </div>
-
-      {/* 圖片放大預覽組件 */}
-      {previewImage && (
-        <div onClick={() => setPreviewImage(null)} style={{ position: 'fixed', inset: 0, zIndex: 2100, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <img src={previewImage} style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '20px', border: '6px solid white' }} alt="preview" />
-        </div>
-      )}
     </div>
   );
 };

@@ -1,7 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, ChevronLeft, MapPin, Clock, Calendar, Pencil, Trash2, ShoppingCart, CheckCircle2, Utensils, ShoppingBag, Globe } from 'lucide-react';
 
-// --- 子組件：自定義刪除確認視窗 ---
+const getCurrencySymbol = (str: string) => {
+  if (str.includes('JPY')) return '¥';
+  if (str.includes('USD')) return '$';
+  if (str.includes('TWD')) return '$';
+  return '';
+};
+
 const DeleteConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void, onCancel: () => void }) => (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 2000, 
@@ -34,7 +40,6 @@ const DeleteConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void, on
   </div>
 );
 
-// --- 主組件 ---
 interface BuyItem {
   id: number;
   trip: string;
@@ -68,7 +73,6 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
 
-  // Form State
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [location, setLocation] = useState('');
@@ -122,7 +126,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
     const updated = editingId ? all.map((i: any) => i.id === editingId ? newItem : i) : [...all, newItem];
     localStorage.setItem('travel_buys', JSON.stringify(updated));
     resetForm();
-    setView('LIST');
+    setView('LIST'); // 自動回列表
   };
 
   const resetForm = () => {
@@ -167,25 +171,22 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
                 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '24px', fontWeight: '900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '4px', ...globalStyle }}>{item.itemName}</div>
-                  
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'black', marginBottom: '4px', ...globalStyle }}>
-                    {item.location || '未指定店家'}
-                  </div>
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'black', marginBottom: '4px', ...globalStyle }}>{item.location || '未指定店家'}</div>
 
                   <div 
                     onClick={() => handleLinkClick(item.link || item.location)}
-                    style={{ fontSize: '14px', color: '#007AFF', display: 'flex', alignItems: 'flex-start', gap: '4px', marginBottom: '10px', cursor: 'pointer', textDecoration: 'underline', ...globalStyle }}
+                    style={{ fontSize: '15px', color: '#007AFF', display: 'flex', alignItems: 'flex-start', gap: '4px', marginBottom: '8px', cursor: 'pointer', textDecoration: 'underline', ...globalStyle }}
                   >
-                    {item.link?.startsWith('http') ? <Globe size={14} /> : <MapPin size={14} />}
+                    {item.link?.startsWith('http') ? <Globe size={16} /> : <MapPin size={16} />}
                     <span style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>
                       {item.link || '點擊開啟地址'}
                     </span>
                   </div>
                   
-                  {/* 修改：營業時段排版調整 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#444', ...globalStyle }}>營業時段：</span>
-                    <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#444', ...globalStyle }}>
+                  {/* 佈局修正：左側對齊 */}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#444', whiteSpace: 'nowrap', ...globalStyle }}>營業時段：</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '16px', fontWeight: 'bold', color: '#444', ...globalStyle }}>
                       <div>{item.time1_start} - {item.time1_end}</div>
                       {item.time2_start && <div>{item.time2_start} - {item.time2_end}</div>}
                     </div>
@@ -196,9 +197,9 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
                   <div onClick={() => item.image && setPreviewImage(item.image)} style={{ width: '85px', height: '85px', border: '3px solid black', borderRadius: '15px', overflow: 'hidden', flexShrink: 0, cursor: item.image ? 'zoom-in' : 'default', backgroundColor: '#EEE' }}>
                     {item.image ? <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="wish" /> : null}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px', fontWeight: 'bold', color: '#444', ...globalStyle }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={13}/> 打烊: {item.time2_end || item.time1_end}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={13}/> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '無'}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '14px', fontWeight: 'bold', color: '#444', ...globalStyle }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={14}/> 打烊: {item.time2_end || item.time1_end}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={14}/> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '無'}</div>
                   </div>
                 </div>
               </div>
@@ -208,7 +209,8 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: '18px', fontWeight: '900', ...globalStyle }}>
                   數量 : {item.quantity}
-                  <span style={{ marginLeft: '20px' }}>{item.currency.split(' ')[0]} {item.price}</span>
+                  {/* 幣種符號顯示 */}
+                  <span style={{ marginLeft: '20px' }}>{getCurrencySymbol(item.currency)} {item.price}</span>
                 </div>
                 <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#666', ...globalStyle }}>
                   {item.category === 'EAT' ? '美食清單' : '購物清單'}
@@ -274,6 +276,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
           )}
         </div>
 
+        {/* 分類按鈕 */}
         <div style={{ display: 'flex', gap: '15px' }}>
           <div onClick={() => setCategory('EAT')} style={{ ...catBtnStyle, backgroundColor: category === 'EAT' ? '#FFD64D' : 'white', ...globalStyle }}>
             <Utensils size={20} /> EAT
@@ -295,6 +298,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
           <select style={{ ...inputStyle, ...globalStyle, flex: 1 }} value={currency} onChange={e => setCurrency(e.target.value)}>
             <option>JPY - 日圓</option>
             <option>TWD - 台幣</option>
+            <option>USD - 美金</option>
           </select>
           <input style={{ ...inputStyle, ...globalStyle, flex: 1 }} placeholder="金額" value={price} onChange={e => setPrice(e.target.value)} />
         </div>

@@ -15,7 +15,6 @@ const DeleteConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void, on
       boxShadow: '0px 10px 0px rgba(0,0,0,0.2)'
     }}>
       <div style={{ color: '#FF5A5A', fontSize: '42px', fontWeight: '900', fontFamily: 'MORITAD' }}>OOPS!</div>
-      {/* 更新文字內容 */}
       <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'black', fontFamily: 'MORITAD' }}>確定不要了？</div>
       <button 
         onClick={onConfirm}
@@ -175,17 +174,18 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
 
                   <div 
                     onClick={() => handleLinkClick(item.link || item.location)}
-                    style={{ fontSize: '15px', color: '#007AFF', display: 'flex', alignItems: 'flex-start', gap: '4px', marginBottom: '8px', cursor: 'pointer', textDecoration: 'underline', ...globalStyle }}
+                    style={{ fontSize: '14px', color: '#007AFF', display: 'flex', alignItems: 'flex-start', gap: '4px', marginBottom: '10px', cursor: 'pointer', textDecoration: 'underline', ...globalStyle }}
                   >
-                    {item.link?.startsWith('http') ? <Globe size={16} /> : <MapPin size={16} />}
+                    {item.link?.startsWith('http') ? <Globe size={14} /> : <MapPin size={14} />}
                     <span style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>
                       {item.link || '點擊開啟地址'}
                     </span>
                   </div>
                   
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#444', whiteSpace: 'nowrap', ...globalStyle }}>營業時段：</span>
-                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '16px', fontWeight: 'bold', color: '#444', ...globalStyle }}>
+                  {/* 修改：營業時段排版調整 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#444', ...globalStyle }}>營業時段：</span>
+                    <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#444', ...globalStyle }}>
                       <div>{item.time1_start} - {item.time1_end}</div>
                       {item.time2_start && <div>{item.time2_start} - {item.time2_end}</div>}
                     </div>
@@ -196,9 +196,9 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
                   <div onClick={() => item.image && setPreviewImage(item.image)} style={{ width: '85px', height: '85px', border: '3px solid black', borderRadius: '15px', overflow: 'hidden', flexShrink: 0, cursor: item.image ? 'zoom-in' : 'default', backgroundColor: '#EEE' }}>
                     {item.image ? <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="wish" /> : null}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '14px', fontWeight: 'bold', color: '#444', ...globalStyle }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={14}/> 打烊: {item.time2_end || item.time1_end}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={14}/> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '無'}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px', fontWeight: 'bold', color: '#444', ...globalStyle }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={13}/> 打烊: {item.time2_end || item.time1_end}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={13}/> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '無'}</div>
                   </div>
                 </div>
               </div>

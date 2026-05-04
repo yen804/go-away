@@ -1,13 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, ChevronLeft, MapPin, User, ShoppingBag, Gift, ShoppingCart, Trash2, Edit2, Clock, Calendar } from 'lucide-react';
 
-// --- 修正處：定義 Props 介面解決 TS2322 ---
-interface BuyBuyBuyModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  currentTrip: string;
-}
-
 const exchangeRates: { [key: string]: number } = {
   JPY: 0.21, KRW: 0.024, USD: 32.5, GBP: 41.2, AUD: 21.5,
   HKD: 4.15, VND: 0.0013, PHP: 0.57, IDR: 0.002, CNY: 4.5, SGD: 24.1
@@ -37,10 +30,10 @@ interface BuyItem {
   time2_end?: string;
 }
 
-// 修正：使用定義好的 Interface
-const BuyBuyBuyModal: React.FC<BuyBuyBuyModalProps> = ({ isOpen, onClose, currentTrip }) => {
+const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTrip: string }> = ({ isOpen, onClose, currentTrip }) => {
   const [view, setView] = useState<'LIST' | 'ADD'>('LIST');
   const [items, setItems] = useState<BuyItem[]>([]);
+  const [previewImage, setPreviewImage] = useState<string | null>(null); // 新增：預覽圖片狀態
   
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -91,7 +84,7 @@ const BuyBuyBuyModal: React.FC<BuyBuyBuyModalProps> = ({ isOpen, onClose, curren
     
     const newItem: BuyItem = {
       id: editingId || Date.now(),
-      trip: currentTrip,
+      trip: currentTrip, 
       itemName, quantity, storeName, locationUrl, paymentMethod, date, time,
       selectedType, buyerName, currency, price, taxFreeJpy, image,
       completed: editingId ? (items.find(i => i.id === editingId)?.completed || false) : false,
@@ -120,7 +113,7 @@ const BuyBuyBuyModal: React.FC<BuyBuyBuyModalProps> = ({ isOpen, onClose, curren
   const openLink = (e: React.MouseEvent, target: string) => {
     e.stopPropagation();
     if (!target) return;
-    window.open(target.startsWith('http') ? target : `http://googleusercontent.com/maps.google.com/search?q=${encodeURIComponent(target)}`, '_blank');
+    window.open(target.startsWith('http') ? target : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(target)}`, '_blank');
   };
 
   const handleEdit = (item: BuyItem) => {
@@ -160,14 +153,15 @@ const BuyBuyBuyModal: React.FC<BuyBuyBuyModalProps> = ({ isOpen, onClose, curren
                         <div style={{ fontSize: '22px', fontWeight: '900', ...baseStyle, color: item.completed ? '#444' : 'black', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.itemName}</div>
                         <div style={{ fontSize: '16px', fontWeight: 'bold', color: item.completed ? '#555' : 'black' }}>{item.storeName}</div>
                         
-                        <div onClick={(e) => openLink(e, item.locationUrl)} style={{ display: 'flex', alignItems: 'flex-start', gap: '4px', fontSize: '11px', color: item.completed ? '#666' : (item.locationUrl ? '#007AFF' : '#666'), cursor: 'pointer', textAlign: 'left', marginBottom: '4px' }}>
-                          <MapPin size={12} style={{flexShrink: 0}} /> 
-                          <span style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{item.locationUrl || '未設定地點'}</span>
+                        <div onClick={(e) => openLink(e, item.locationUrl)} style={{ display: 'flex', alignItems: 'flex-start', gap: '4px', fontSize: '12px', color: item.completed ? '#666' : (item.locationUrl ? '#007AFF' : '#666'), cursor: 'pointer', textAlign: 'left', marginBottom: '8px' }}>
+                          <MapPin size={13} style={{flexShrink: 0, marginTop: '2px'}} /> 
+                          <span style={{display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{item.locationUrl || '未設定地點'}</span>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', whiteSpace: 'nowrap' }}>營業時段：</span>
-                          <div style={{ fontSize: '14px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        {/* 修改：營業時段排版調整 */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 'bold', color: item.completed ? '#666' : '#444' }}>營業時段：</span>
+                          <div style={{ fontSize: '14px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', display: 'flex', flexDirection: 'column' }}>
                             <div>{item.time1_start} - {item.time1_end}</div>
                             {item.time2_start && <div>{item.time2_start} - {item.time2_end}</div>}
                           </div>
@@ -175,7 +169,7 @@ const BuyBuyBuyModal: React.FC<BuyBuyBuyModalProps> = ({ isOpen, onClose, curren
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
-                        <div style={{ position: 'relative' }}>
+                        <div onClick={() => item.image && setPreviewImage(item.image)} style={{ position: 'relative', cursor: item.image ? 'zoom-in' : 'default' }}>
                           {item.image ? (
                             <img src={item.image} style={{ width: '85px', height: '85px', borderRadius: '20px', border: '3px solid black', objectFit: 'cover' }} />
                           ) : (
@@ -184,10 +178,10 @@ const BuyBuyBuyModal: React.FC<BuyBuyBuyModalProps> = ({ isOpen, onClose, curren
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 'bold', color: '#444' }}>
-                             <Clock size={14}/> 打烊: {item.time2_end || item.time1_end}
+                             <Clock size={13}/> 打烊: {item.time2_end || item.time1_end}
                            </div>
                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 'bold', color: '#444' }}>
-                             <Calendar size={14}/> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '－'}
+                             <Calendar size={13}/> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '－'}
                            </div>
                         </div>
                       </div>
@@ -317,6 +311,13 @@ const BuyBuyBuyModal: React.FC<BuyBuyBuyModalProps> = ({ isOpen, onClose, curren
           </div>
         )}
       </div>
+
+      {/* 圖片放大預覽組件 */}
+      {previewImage && (
+        <div onClick={() => setPreviewImage(null)} style={{ position: 'fixed', inset: 0, zIndex: 2100, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <img src={previewImage} style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '20px', border: '6px solid white' }} alt="preview" />
+        </div>
+      )}
     </div>
   );
 };
@@ -324,4 +325,4 @@ const BuyBuyBuyModal: React.FC<BuyBuyBuyModalProps> = ({ isOpen, onClose, curren
 const inputStyle: React.CSSProperties = { border: '3px solid black', borderRadius: '15px', padding: '8px 12px', fontSize: '16px', fontWeight: 'bold', width: '100%', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif' };
 const gridInput: React.CSSProperties = { border: '3px solid black', borderRadius: '12px', padding: '6px', fontSize: '14px', fontWeight: 'bold', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif', backgroundColor: 'white' };
 
-export default BuyBuyBuyModal;
+export default BuyBuyBuyList;

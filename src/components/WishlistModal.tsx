@@ -1,13 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, ChevronLeft, MapPin, Clock, Calendar, Pencil, Trash2, ShoppingCart, CheckCircle2, Utensils, ShoppingBag, Globe } from 'lucide-react';
 
-const getCurrencySymbol = (str: string) => {
-  if (str.includes('JPY')) return '¥';
-  if (str.includes('USD')) return '$';
-  if (str.includes('TWD')) return '$';
-  return '';
-};
-
 const DeleteConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void, onCancel: () => void }) => (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 2000, 
@@ -104,7 +97,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
     if (target.startsWith('http')) {
       window.open(target, '_blank');
     } else {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(target)}`, '_blank');
+      window.open(`http://googleusercontent.com/maps.google.com/search?q=${encodeURIComponent(target)}`, '_blank');
     }
   };
 
@@ -126,7 +119,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
     const updated = editingId ? all.map((i: any) => i.id === editingId ? newItem : i) : [...all, newItem];
     localStorage.setItem('travel_buys', JSON.stringify(updated));
     resetForm();
-    setView('LIST'); // 自動回列表
+    setView('LIST');
   };
 
   const resetForm = () => {
@@ -171,11 +164,14 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
                 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '24px', fontWeight: '900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '4px', ...globalStyle }}>{item.itemName}</div>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'black', marginBottom: '4px', ...globalStyle }}>{item.location || '未指定店家'}</div>
+                  
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'black', marginBottom: '4px', ...globalStyle }}>
+                    {item.location || '未指定店家'}
+                  </div>
 
                   <div 
                     onClick={() => handleLinkClick(item.link || item.location)}
-                    style={{ fontSize: '15px', color: '#007AFF', display: 'flex', alignItems: 'flex-start', gap: '4px', marginBottom: '8px', cursor: 'pointer', textDecoration: 'underline', ...globalStyle }}
+                    style={{ fontSize: '15px', color: '#007AFF', display: 'flex', alignItems: 'flex-start', gap: '4px', marginBottom: '12px', cursor: 'pointer', textDecoration: 'underline', ...globalStyle }}
                   >
                     {item.link?.startsWith('http') ? <Globe size={16} /> : <MapPin size={16} />}
                     <span style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>
@@ -183,7 +179,6 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
                     </span>
                   </div>
                   
-                  {/* 佈局修正：左側對齊 */}
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                     <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#444', whiteSpace: 'nowrap', ...globalStyle }}>營業時段：</span>
                     <div style={{ display: 'flex', flexDirection: 'column', fontSize: '16px', fontWeight: 'bold', color: '#444', ...globalStyle }}>
@@ -209,8 +204,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: '18px', fontWeight: '900', ...globalStyle }}>
                   數量 : {item.quantity}
-                  {/* 幣種符號顯示 */}
-                  <span style={{ marginLeft: '20px' }}>{getCurrencySymbol(item.currency)} {item.price}</span>
+                  <span style={{ marginLeft: '20px' }}>{item.currency.split(' ')[0]} ${item.price}</span>
                 </div>
                 <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#666', ...globalStyle }}>
                   {item.category === 'EAT' ? '美食清單' : '購物清單'}
@@ -276,7 +270,6 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
           )}
         </div>
 
-        {/* 分類按鈕 */}
         <div style={{ display: 'flex', gap: '15px' }}>
           <div onClick={() => setCategory('EAT')} style={{ ...catBtnStyle, backgroundColor: category === 'EAT' ? '#FFD64D' : 'white', ...globalStyle }}>
             <Utensils size={20} /> EAT
@@ -298,7 +291,6 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
           <select style={{ ...inputStyle, ...globalStyle, flex: 1 }} value={currency} onChange={e => setCurrency(e.target.value)}>
             <option>JPY - 日圓</option>
             <option>TWD - 台幣</option>
-            <option>USD - 美金</option>
           </select>
           <input style={{ ...inputStyle, ...globalStyle, flex: 1 }} placeholder="金額" value={price} onChange={e => setPrice(e.target.value)} />
         </div>

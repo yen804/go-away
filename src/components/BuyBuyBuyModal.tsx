@@ -6,14 +6,6 @@ const exchangeRates: { [key: string]: number } = {
   HKD: 4.15, VND: 0.0013, PHP: 0.57, IDR: 0.002, CNY: 4.5, SGD: 24.1
 };
 
-// 幣種符號轉換
-const getCurrencySymbol = (code: string) => {
-  const symbols: { [key: string]: string } = {
-    JPY: '¥', USD: '$', KRW: '₩', EUR: '€', GBP: '£', AUD: 'A$', HKD: 'HK$', CNY: '¥', TWD: '$'
-  };
-  return symbols[code] || code;
-};
-
 interface BuyItem {
   id: number;
   trip: string;
@@ -111,9 +103,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
 
   const toggleComplete = (id: number) => {
     const allItems = JSON.parse(localStorage.getItem('buy_buy_buy_v10') || '[]');
-    // 修正：將 item 改為 it
     const updatedAll = allItems.map((it: any) => it.id === id ? { ...it, completed: !it.completed } : it);
-    
     localStorage.setItem('buy_buy_buy_v10', JSON.stringify(updatedAll));
     setItems(updatedAll.filter((it: any) => it.trip === currentTrip));
   };
@@ -121,7 +111,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   const openLink = (e: React.MouseEvent, target: string) => {
     e.stopPropagation();
     if (!target) return;
-    window.open(target.startsWith('http') ? target : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(target)}`, '_blank');
+    window.open(target.startsWith('http') ? target : `http://googleusercontent.com/maps.google.com/search?q=${encodeURIComponent(target)}`, '_blank');
   };
 
   const handleEdit = (item: BuyItem) => {
@@ -166,7 +156,6 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                           <span style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{item.locationUrl || '未設定地點'}</span>
                         </div>
 
-                        {/* 佈局修正：左側對齊 */}
                         <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px' }}>
                           <span style={{ fontSize: '12px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', whiteSpace: 'nowrap' }}>營業時段：</span>
                           <div style={{ fontSize: '14px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -198,8 +187,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '900', ...baseStyle }}>
                       <div style={{ fontSize: '20px' }}>數量 : {item.quantity}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        {/* 修正：顯示幣種符號 */}
-                        <span style={{ fontSize: '18px' }}>{getCurrencySymbol(item.currency)} {Number(item.price).toLocaleString()}</span>
+                        <span style={{ fontSize: '18px' }}>{item.currency} ${Number(item.price).toLocaleString()}</span>
                         <span style={{ border: '3px solid black', padding: '2px 15px', borderRadius: '20px', backgroundColor: 'white', fontSize: '16px' }}>{item.buyerName}</span>
                       </div>
                     </div>
@@ -252,7 +240,6 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                 </div>
               </div>
 
-              {/* 分類按鈕 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                 {[{ id: '自己', icon: <User size={18}/> }, { id: '代購', icon: <ShoppingBag size={18}/> }, { id: '伴手禮', icon: <Gift size={18}/> }].map(t => (
                   <button key={t.id} onClick={() => setSelectedType(t.id)} style={{ ...gridInput, backgroundColor: selectedType === t.id ? '#FFD64D' : 'white', height: '50px', flexDirection: 'column', gap: 2 }}>
@@ -299,7 +286,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '10px', alignItems: 'center' }}>
-                <div style={{ fontWeight: '900', ...baseStyle }}>Tax Free ({getCurrencySymbol(currency)})</div>
+                <div style={{ fontWeight: '900', ...baseStyle }}>Tax Free ({currency})</div>
                 <input type="number" style={inputStyle} value={taxFreeJpy} onChange={e => setTaxFreeJpy(e.target.value)} />
               </div>
 

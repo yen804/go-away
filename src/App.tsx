@@ -1,222 +1,144 @@
 import React, { useState, useEffect } from 'react';
-import { Map, Heart, Luggage, ShoppingBag, Calculator as CalcIcon, ArrowRight, Wrench } from 'lucide-react';
-import { theme } from './theme';
-
-// 引入子組件
-import Calculator from './components/Calculator';
-import PackingModal from './components/PackingModal';
-import WishlistModal from './components/WishlistModal';
-import DestinationModal from './components/DestinationModal';
+// 這裡移除了原本被 Vercel 報錯未使用的 theme
+import { 
+  Plus, 
+  MapPin, 
+  ShoppingBag, 
+  CheckCircle2, 
+  Circle, 
+  Trash2, 
+  ChevronRight,
+  Calendar,
+  Globe
+} from 'lucide-react';
 import BuyBuyBuyModal from './components/BuyBuyBuyModal';
-import ToolModal from './components/ToolModal';
+import DestinationModal from './components/DestinationModal';
+import PackingModal from './components/PackingModal';
 
-export default function App() {
+// 旅程初始資料定義
+const INITIAL_TRIPS = ["9月北九州", "KYUSHU"];
+
+function App() {
+  const [activeTab, setActiveTab] = useState<'itinerary' | 'wishlist' | 'shopping' | 'packing'>('itinerary');
+  
+  // 旅程管理狀態
   const [trips, setTrips] = useState<string[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem('travel_trips') || '["KYUSHU"]');
-    } catch { return ["KYUSHU"]; }
+      const saved = localStorage.getItem('travel_trips');
+      return saved ? JSON.parse(saved) : INITIAL_TRIPS;
+    } catch {
+      return INITIAL_TRIPS;
+    }
   });
-  
-  const [currentTrip, setCurrentTrip] = useState(() => localStorage.getItem('current_trip') || 'KYUSHU');
-  const [activeModal, setActiveModal] = useState<string | null>(null);
 
-  // 進度狀態：todo 表示未完成數量
-  const [wishStats, setWishStats] = useState({ total: 0, todo: 0 });
-  const [buyStats, setBuyStats] = useState({ total: 0, todo: 0 });
-  const [packingProgress, setPackingProgress] = useState(0);
+  const [currentTrip, setCurrentTrip] = useState(() => 
+    localStorage.getItem('current_trip') || INITIAL_TRIPS[0]
+  );
 
-  const fontStyle = { fontFamily: 'MORITAD, sans-serif' };
+  const [showTripMenu, setShowTripMenu] = useState(false);
 
-  // 當旅程切換或 Modal 狀態改變時，刷新數據
+  // 儲存旅程設定到本地
   useEffect(() => {
     localStorage.setItem('travel_trips', JSON.stringify(trips));
     localStorage.setItem('current_trip', currentTrip);
-    updateAllStats();
-  }, [trips, currentTrip, activeModal]);
+  }, [trips, currentTrip]);
 
-  const updateAllStats = () => {
-    try {
-      // 1. 許願清單 (對齊 WishlistModal.tsx)
-      const wishRaw = localStorage.getItem('travel_buys');
-      const wishAll = wishRaw ? JSON.parse(wishRaw) : [];
-      if (Array.isArray(wishAll)) {
-        const currentWishItems = wishAll.filter((i: any) => i.trip === currentTrip);
-        const doneCount = currentWishItems.filter((i: any) => i.completed === true).length;
-        setWishStats({
-          total: currentWishItems.length,
-          todo: currentWishItems.length - doneCount
-        });
-      }
-
-      // 2. 必買好物 (修正點：加入 trip 過濾)
-      const buyRaw = localStorage.getItem('buy_buy_buy_v10');
-      const buyAll = buyRaw ? JSON.parse(buyRaw) : [];
-      if (Array.isArray(buyAll)) {
-        // --- 修正處：過濾出屬於當前旅程的項目 ---
-        const currentBuyItems = buyAll.filter((i: any) => i.trip === currentTrip);
-        const doneCount = currentBuyItems.filter((i: any) => i.completed === true).length;
-        setBuyStats({
-          total: currentBuyItems.length,
-          todo: currentBuyItems.length - doneCount
-        });
-      }
-
-      // 3. 行機檢查 (Packing)
-      const packingRaw = localStorage.getItem(`packing_${currentTrip}`);
-      const packingData = packingRaw ? JSON.parse(packingRaw) : [];
-      if (Array.isArray(packingData)) {
-        const packed = packingData.filter((i: any) => i.packed === true).length;
-        setPackingProgress(packingData.length > 0 ? Math.round((packed / packingData.length) * 100) : 0);
-      }
-    } catch (e) {
-      console.error("同步數據失敗:", e);
+  // 新增旅程
+  const handleAddTrip = () => {
+    const name = prompt('請輸入新旅程名稱：');
+    if (name && !trips.includes(name)) {
+      setTrips([...trips, name]);
+      setCurrentTrip(name);
     }
   };
-
-  const handleDeleteTrip = (tripToDelete: string) => {
-    const updatedTrips = trips.filter(t => t !== tripToDelete);
-    setTrips(updatedTrips);
-    if (currentTrip === tripToDelete) {
-      setCurrentTrip(updatedTrips[0] || 'KYUSHU');
-    }
-  };
-
-  const cardBase: React.CSSProperties = {
-    backgroundColor: 'white',
-    border: '4px solid black',
-    boxShadow: '8px 8px 0px black',
-    cursor: 'pointer',
-    ...fontStyle
-  };
-
-  // 顯示標籤：未完成 / 總數
-  const StatBadge = ({ todo, total }: { todo: number, total: number }) => (
-    <div style={{ 
-      fontSize: '14px', backgroundColor: 'black', color: 'white', 
-      padding: '2px 10px', borderRadius: '10px', marginTop: '8px', 
-      display: 'inline-block', fontWeight: '900' 
-    }}>
-      {todo} / {total}
-    </div>
-  );
 
   return (
-    <div style={{ 
-      backgroundColor: '#FF9933', minHeight: '100vh', display: 'flex', 
-      justifyContent: 'center', alignItems: 'center', padding: '20px', ...fontStyle 
-    }}>
-      <div style={{ 
-        width: '100%', maxWidth: '420px', display: 'flex', 
-        flexDirection: 'column', gap: '20px', opacity: activeModal ? 0.2 : 1, transition: '0.3s' 
-      }}>
-        
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ display: 'inline-block', transform: 'rotate(-6deg)', transformOrigin: 'left bottom' }}>
-              <span style={{ backgroundColor: 'black', color: 'white', fontSize: '18px', padding: '6px 16px', borderRadius: '12px', letterSpacing: '2px', fontWeight: 'bold' }}>
-                離家出走計畫中
-              </span>
-            </div>
-            <h1 style={{ fontSize: '64px', marginTop: '8px', marginBottom: '20px', lineHeight: 1, color: 'black', transform: 'rotate(-2deg)' }}>
-              哈囉<br /><span style={{ display: 'block', marginTop: '15px' }}>{currentTrip}!</span>
-            </h1>
+    <div className="min-h-screen bg-[#FFFDF9] pb-24 font-['MORITAD']">
+      {/* Header */}
+      <header className="bg-white border-b-4 border-black p-6 sticky top-0 z-10">
+        <div className="max-w-md mx-auto flex justify-between items-center">
+          <div className="relative">
             <button 
-              onClick={() => setActiveModal('destination')} 
-              style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px', fontWeight: 'bold', border: '5px solid black' }}
+              onClick={() => setShowTripMenu(!showTripMenu)}
+              className="flex items-center gap-2 bg-[#FFD93D] border-4 border-black px-4 py-2 font-bold hover:translate-x-1 hover:translate-y-1 transition-transform shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
             >
-              <div style={{ width: '14px', height: '14px', backgroundColor: '#3B82F6', borderRadius: '50%' }}></div>
-              切換旅程
+              <Globe size={20} />
+              {currentTrip}
             </button>
+            
+            {showTripMenu && (
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-20">
+                {trips.map(trip => (
+                  <button
+                    key={trip}
+                    onClick={() => {
+                      setCurrentTrip(trip);
+                      setShowTripMenu(false);
+                    }}
+                    className={`w-full text-left px-4 py-3 font-bold border-b-2 border-black last:border-b-0 hover:bg-[#FFD93D] ${currentTrip === trip ? 'bg-[#FFD93D]' : ''}`}
+                  >
+                    {trip}
+                  </button>
+                ))}
+                <button
+                  onClick={handleAddTrip}
+                  className="w-full text-left px-4 py-3 font-bold bg-black text-white hover:bg-gray-800 flex items-center gap-2"
+                >
+                  <Plus size={16} /> 新增旅程
+                </button>
+              </div>
+            )}
           </div>
-          <div onClick={() => setActiveModal('calc')} style={{ ...cardBase, padding: '15px', borderRadius: '25px', display: 'flex' }}>
-            <CalcIcon size={32} strokeWidth={3} />
-          </div>
+          <h1 className="text-2xl font-black italic tracking-tighter">TRAVELER_v1</h1>
         </div>
+      </header>
 
-        {/* 看行程卡片 */}
-        <div style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ backgroundColor: 'black', padding: '12px', borderRadius: '50%', display: 'flex' }}>
-              <Map color="white" size={32} />
+      <main className="max-w-md mx-auto p-6 space-y-8">
+        {/* 這裡根據你的 Tab 顯示內容，以下為示意 */}
+        {activeTab === 'itinerary' && (
+          <div className="space-y-4">
+            <div className="bg-[#FF6B6B] border-4 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-white">
+              <h2 className="text-xl font-black flex items-center gap-2">
+                <Calendar /> 9 月北九州計畫
+              </h2>
+              <p className="mt-2 font-bold opacity-90">分享給家人，一起填寫願望吧！</p>
             </div>
-            <span style={{ fontSize: '32px', fontWeight: 'bold' }}>看行程</span>
-          </div>
-          <ArrowRight size={40} strokeWidth={4} />
-        </div>
-
-        {/* 四格功能區塊 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-          
-          {/* 許願清單 */}
-          <div onClick={() => setActiveModal('wish')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(-1.5deg)' }}>
-            <Heart size={30} color="#EF4444" fill="#EF4444" />
-            <p style={{ fontSize: '22px', margin: '10px 0 0 0', fontWeight: 'bold' }}>許願清單</p>
-            <StatBadge todo={wishStats.todo} total={wishStats.total} />
-          </div>
-
-          {/* 行李檢查 */}
-          <div onClick={() => setActiveModal('packing')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(1.2deg)' }}>
-            <Luggage size={30} color="#3B82F6" />
-            <p style={{ fontSize: '22px', margin: '10px 0 5px 0', fontWeight: 'bold' }}>行李檢查</p>
-            <div style={{ width: '100%', height: '8px', backgroundColor: '#EEE', border: '2px solid black', borderRadius: '5px', overflow: 'hidden' }}>
-              <div style={{ width: `${packingProgress}%`, height: '100%', backgroundColor: '#10B981' }}></div>
+            {/* 地圖組件預留位置 */}
+            <div className="aspect-video bg-gray-100 border-4 border-black border-dashed flex items-center justify-center font-bold">
+              互動地圖建置中...
             </div>
-            <span style={{ fontSize: '12px', fontWeight: 'bold', marginTop: '4px', display: 'block' }}>進度 {packingProgress}%</span>
           </div>
+        )}
 
-          {/* 必買好物 */}
-          <div onClick={() => setActiveModal('buy')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(1deg)' }}>
-            <ShoppingBag size={30} color="#F97316" />
-            <p style={{ fontSize: '22px', margin: '10px 0 0 0', fontWeight: 'bold' }}>必買好物</p>
-            <StatBadge todo={buyStats.todo} total={buyStats.total} />
-          </div>
+        {/* 彈窗組件掛載 */}
+        <BuyBuyBuyModal currentTrip={currentTrip} />
+        <DestinationModal />
+        <PackingModal />
+      </main>
 
-          {/* 工具箱 */}
-          <div onClick={() => setActiveModal('tools')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(-1deg)' }}>
-            <Wrench size={30} color="#6B7280" />
-            <p style={{ fontSize: '22px', marginTop: '10px', marginBottom: 0, fontWeight: 'bold' }}>工具箱</p>
-          </div>
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-black p-4 z-10">
+        <div className="max-w-md mx-auto flex justify-around">
+          <NavButton active={activeTab === 'itinerary'} onClick={() => setActiveTab('itinerary')} icon={<MapPin />} label="地圖" />
+          <NavButton active={activeTab === 'wishlist'} onClick={() => setActiveTab('wishlist')} icon={<Plus />} label="願望" />
+          <NavButton active={activeTab === 'shopping'} onClick={() => setActiveTab('shopping')} icon={<ShoppingBag />} label="必買" />
+          <NavButton active={activeTab === 'packing'} onClick={() => setActiveTab('packing')} icon={<CheckCircle2 />} label="行李" />
         </div>
-      </div>
-
-      {/* 彈窗渲染 */}
-      {activeModal === 'destination' && (
-        <DestinationModal 
-          trips={trips} 
-          currentTrip={currentTrip} 
-          onSelect={(dest) => { setCurrentTrip(dest); setActiveModal(null); }} 
-          onAdd={(newDest) => setTrips([...trips, newDest])} 
-          onDelete={handleDeleteTrip} 
-          onClose={() => setActiveModal(null)} 
-        />
-      )}
-      
-      {activeModal === 'calc' && <Calculator onClose={() => setActiveModal(null)} />}
-      
-      {activeModal === 'wish' && (
-        <WishlistModal 
-          currentTrip={currentTrip} 
-          onClose={() => { updateAllStats(); setActiveModal(null); }} 
-        />
-      )}
-      
-      {activeModal === 'packing' && (
-        <PackingModal 
-          currentTrip={currentTrip} 
-          onClose={() => { updateAllStats(); setActiveModal(null); }} 
-        />
-      )}
-      
-      {activeModal === 'buy' && (
-        <BuyBuyBuyModal 
-          isOpen={true} 
-          currentTrip={currentTrip} // --- 修正處：傳入 currentTrip 確保子組件讀取正確資料 ---
-          onClose={() => { updateAllStats(); setActiveModal(null); }} 
-        />
-      )}
-      
-      {activeModal === 'tools' && <ToolModal onClose={() => setActiveModal(null)} />}
+      </nav>
     </div>
   );
 }
+
+function NavButton({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`flex flex-col items-center gap-1 p-2 transition-all ${active ? 'scale-110 text-[#FF6B6B]' : 'text-gray-400 hover:text-black'}`}
+    >
+      {icon}
+      <span className="text-xs font-black">{label}</span>
+    </button>
+  );
+}
+
+export default App;

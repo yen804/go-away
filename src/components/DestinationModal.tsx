@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Plus, MapPin, ExternalLink, Trash2 } from 'lucide-react';
+import { X, Plus, MapPin, Trash2 } from 'lucide-react';
 
 interface Destination { id: string; name: string; note: string; link: string; }
 

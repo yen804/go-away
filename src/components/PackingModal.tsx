@@ -64,7 +64,6 @@ const PackingModal: React.FC<Props> = ({ onClose, currentTrip }) => {
   ];
 
   const categories = ['隨身行李', '手提行李', '托運行李', '手提 / 托運'];
-  // 字體放大 10% (基礎 1.1倍)
   const globalStyle = { fontFamily: 'MORITAD' };
 
   const [items, setItems] = useState<any[]>(() => {
@@ -74,9 +73,11 @@ const PackingModal: React.FC<Props> = ({ onClose, currentTrip }) => {
 
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null); // 新增刪除目標狀態
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [newItemName, setNewItemName] = useState('');
-  const [newCat] = useState('隨身行李');
+  
+  // 修改：將 newCat 改為 State，預設為 '隨身行李'
+  const [newCat, setNewCat] = useState('隨身行李');
 
   useEffect(() => {
     localStorage.setItem(`packing_${currentTrip}`, JSON.stringify(items));
@@ -108,7 +109,6 @@ const PackingModal: React.FC<Props> = ({ onClose, currentTrip }) => {
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000, backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(5px)' }}>
-      {/* 背景改為橘色 #FF9933 */}
       <div style={{ backgroundColor: '#FF9933', border: '6px solid black', borderRadius: '50px', width: '95%', maxWidth: '440px', height: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '20px 20px 0px black', position: 'relative', ...globalStyle }}>
         
         {/* Header */}
@@ -198,7 +198,28 @@ const PackingModal: React.FC<Props> = ({ onClose, currentTrip }) => {
                 <span style={{ fontSize: '27.5px', fontWeight: '900', color: '#3B82F6' }}>ADD ITEM</span>
                 <button onClick={() => setIsAdding(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={33} /></button>
               </div>
-              <input value={newItemName} onChange={e => setNewItemName(e.target.value)} placeholder="物品名稱..." style={{ width: '100%', padding: '16.5px', border: '3px solid black', borderRadius: '15px', fontSize: '20.9px', marginBottom: '22px', boxSizing: 'border-box', ...globalStyle }} />
+              
+              <input 
+                value={newItemName} 
+                onChange={e => setNewItemName(e.target.value)} 
+                placeholder="物品名稱..." 
+                style={{ width: '100%', padding: '16.5px', border: '3px solid black', borderRadius: '15px', fontSize: '20.9px', marginBottom: '15px', boxSizing: 'border-box', ...globalStyle }} 
+              />
+              
+              {/* 新增的分類選擇選單 */}
+              <div style={{ marginBottom: '22px' }}>
+                <label style={{ display: 'block', fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>選擇分類：</label>
+                <select 
+                  value={newCat} 
+                  onChange={e => setNewCat(e.target.value)}
+                  style={{ width: '100%', padding: '12px', border: '3px solid black', borderRadius: '15px', fontSize: '18px', fontWeight: 'bold', backgroundColor: '#F3F4F6', cursor: 'pointer', ...globalStyle }}
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
               <button 
                 onClick={() => { 
                   if(!newItemName) return; 

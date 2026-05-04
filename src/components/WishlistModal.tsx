@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, ChevronLeft, MapPin, Clock, Calendar, Pencil, Trash2, ShoppingCart, CheckCircle2, Utensils, ShoppingBag, Globe } from 'lucide-react';
 
+// 新增幣種定義
+const currencyNames: { [key: string]: string } = {
+  JPY: '日圓', KRW: '韓幣', USD: '美金', GBP: '英鎊', AUD: '澳幣',
+  HKD: '港幣', VND: '越南幣', PHP: '披索', IDR: '印尼盾', CNY: '人民幣', SGD: '新幣', TWD: '台幣'
+};
+
 const DeleteConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void, onCancel: () => void }) => (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 2000, 
@@ -92,12 +98,13 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
     setItems(saved.filter((item: BuyItem) => item.trip === currentTrip));
   }, [currentTrip, view]);
 
+  // 修正：有效的連結邏輯
   const handleLinkClick = (target: string) => {
     if (!target) return;
     if (target.startsWith('http')) {
       window.open(target, '_blank');
     } else {
-      window.open(`http://googleusercontent.com/maps.google.com/search?q=${encodeURIComponent(target)}`, '_blank');
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(target)}`, '_blank');
     }
   };
 
@@ -171,7 +178,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
 
                   <div 
                     onClick={() => handleLinkClick(item.link || item.location)}
-                    style={{ fontSize: '15px', color: '#007AFF', display: 'flex', alignItems: 'flex-start', gap: '4px', marginBottom: '12px', cursor: 'pointer', textDecoration: 'underline', ...globalStyle }}
+                    style={{ fontSize: '15px', color: '#007AFF', display: 'flex', alignItems: 'flex-start', gap: '4px', marginBottom: '8px', cursor: 'pointer', textDecoration: 'underline', ...globalStyle }}
                   >
                     {item.link?.startsWith('http') ? <Globe size={16} /> : <MapPin size={16} />}
                     <span style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>
@@ -179,7 +186,8 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
                     </span>
                   </div>
                   
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                  {/* 修正：營業時段左側對齊圖示邊緣 */}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginLeft: '-70px', paddingLeft: '70px' }}>
                     <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#444', whiteSpace: 'nowrap', ...globalStyle }}>營業時段：</span>
                     <div style={{ display: 'flex', flexDirection: 'column', fontSize: '16px', fontWeight: 'bold', color: '#444', ...globalStyle }}>
                       <div>{item.time1_start} - {item.time1_end}</div>
@@ -204,7 +212,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: '18px', fontWeight: '900', ...globalStyle }}>
                   數量 : {item.quantity}
-                  <span style={{ marginLeft: '20px' }}>{item.currency.split(' ')[0]} ${item.price}</span>
+                  <span style={{ marginLeft: '20px' }}>{item.currency.split(' ')[0]} {item.price}</span>
                 </div>
                 <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#666', ...globalStyle }}>
                   {item.category === 'EAT' ? '美食清單' : '購物清單'}
@@ -288,9 +296,11 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
-          <select style={{ ...inputStyle, ...globalStyle, flex: 1 }} value={currency} onChange={e => setCurrency(e.target.value)}>
-            <option>JPY - 日圓</option>
-            <option>TWD - 台幣</option>
+          {/* 修正：增加顯示更多幣種 */}
+          <select style={{ ...inputStyle, ...globalStyle, flex: 1.2 }} value={currency} onChange={e => setCurrency(e.target.value)}>
+            {Object.entries(currencyNames).map(([code, name]) => (
+              <option key={code} value={`${code} - ${name}`}>{code} - {name}</option>
+            ))}
           </select>
           <input style={{ ...inputStyle, ...globalStyle, flex: 1 }} placeholder="金額" value={price} onChange={e => setPrice(e.target.value)} />
         </div>

@@ -6,7 +6,6 @@ const exchangeRates: { [key: string]: number } = {
   HKD: 4.15, VND: 0.0013, PHP: 0.57, IDR: 0.002, CNY: 4.5, SGD: 24.1
 };
 
-// 新增幣種中文定義
 const currencyNames: { [key: string]: string } = {
   JPY: '日圓', KRW: '韓幣', USD: '美金', GBP: '英鎊', AUD: '澳幣',
   HKD: '港幣', VND: '越南幣', PHP: '披索', IDR: '印尼盾', CNY: '人民幣', SGD: '新幣'
@@ -110,12 +109,10 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   const toggleComplete = (id: number) => {
     const allItems = JSON.parse(localStorage.getItem('buy_buy_buy_v10') || '[]');
     const updatedAll = allItems.map((it: any) => it.id === id ? { ...it, completed: !it.completed } : it);
-    
     localStorage.setItem('buy_buy_buy_v10', JSON.stringify(updatedAll));
     setItems(updatedAll.filter((it: any) => it.trip === currentTrip));
   };
 
-  // 修正：有效的連結邏輯
   const openLink = (e: React.MouseEvent, target: string) => {
     e.stopPropagation();
     if (!target) return;
@@ -156,7 +153,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                 <div key={item.id} style={{ position: 'relative', marginBottom: '20px' }}>
                   <div style={{ backgroundColor: item.completed ? COMPLETED_GRAY : 'white', border: '4px solid black', borderRadius: '40px', padding: '15px 20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                      <div onClick={() => toggleComplete(item.id)} style={{ width: '60px', height: '60px', borderRadius: '15px', border: '3px solid black', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: item.completed ? '#666' : 'white' }}>
+                      <div onClick={() => toggleComplete(item.id)} style={{ width: '60px', height: '60px', borderRadius: '15px', border: '3px solid black', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: item.completed ? '#666' : 'white', flexShrink: 0 }}>
                         {item.selectedType === '代購' ? <ShoppingBag color={item.completed ? 'white' : 'black'} /> : item.selectedType === '伴手禮' ? <Gift color={item.completed ? 'white' : 'black'} /> : <User color={item.completed ? 'white' : 'black'} />}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -168,8 +165,8 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                           <span style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{item.locationUrl || '點擊開啟地址'}</span>
                         </div>
 
-                        {/* 修正：營業時段左側對齊圖示邊緣，並與地圖連結保持間距 */}
-                        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', marginLeft: '-72px', paddingLeft: '72px', marginTop: '4px' }}>
+                        {/* 修正：對齊左側按鈕邊緣，並與地圖連結保持 8px 間距 */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', marginLeft: '-72px', paddingLeft: '72px', marginTop: '8px' }}>
                           <span style={{ fontSize: '12px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', whiteSpace: 'nowrap' }}>營業時段：</span>
                           <div style={{ fontSize: '14px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             <div>{item.time1_start} - {item.time1_end}</div>
@@ -241,7 +238,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
 
               <div style={{ border: '3px solid black', borderRadius: '25px', padding: '15px' }}>
                 <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '8px', fontWeight: 'bold' }}>DATE & TIME</div>
-                {/* 修正：欄位大小一致且保持間距 */}
+                {/* 修正：統一為 1fr 1fr 網格，欄位大小一致且保持 12px 間距 */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <input type="date" value={date} style={gridInput} onChange={e => setDate(e.target.value)} />
                   <input placeholder="付款方式" list="pay-hist" style={gridInput} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
@@ -293,7 +290,6 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px' }}>
-                {/* 修正：幣種顯示中文說明 */}
                 <select value={currency} style={inputStyle} onChange={e => setCurrency(e.target.value)}>
                   {Object.entries(currencyNames).map(([code, name]) => (
                     <option key={code} value={code}>{code} - {name}</option>

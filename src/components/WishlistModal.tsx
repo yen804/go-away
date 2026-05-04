@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, ChevronLeft, MapPin, Clock, Calendar, Pencil, Trash2, ShoppingCart, CheckCircle2, Utensils, ShoppingBag, Globe } from 'lucide-react';
 
-// 新增幣種定義
+// 幣種定義
 const currencyNames: { [key: string]: string } = {
   JPY: '日圓', KRW: '韓幣', USD: '美金', GBP: '英鎊', AUD: '澳幣',
   HKD: '港幣', VND: '越南幣', PHP: '披索', IDR: '印尼盾', CNY: '人民幣', SGD: '新幣', TWD: '台幣'
@@ -98,13 +98,12 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
     setItems(saved.filter((item: BuyItem) => item.trip === currentTrip));
   }, [currentTrip, view]);
 
-  // 修正：有效的連結邏輯
   const handleLinkClick = (target: string) => {
     if (!target) return;
     if (target.startsWith('http')) {
       window.open(target, '_blank');
     } else {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(target)}`, '_blank');
+      window.open(`https://www.google.com/maps/search/${encodeURIComponent(target)}`, '_blank');
     }
   };
 
@@ -186,7 +185,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
                     </span>
                   </div>
                   
-                  {/* 修正：營業時段左側對齊圖示邊緣 */}
+                  {/* 修正：營業時段左側對齊分類圖示(55px)與間距(15px) = 70px */}
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginLeft: '-70px', paddingLeft: '70px' }}>
                     <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#444', whiteSpace: 'nowrap', ...globalStyle }}>營業時段：</span>
                     <div style={{ display: 'flex', flexDirection: 'column', fontSize: '16px', fontWeight: 'bold', color: '#444', ...globalStyle }}>
@@ -292,11 +291,10 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
             const file = e.target.files?.[0];
             if(file){ const reader = new FileReader(); reader.onloadend = () => setImage(reader.result as string); reader.readAsDataURL(file); }
           }} />
-          {image ? <img src={image} style={{ height: '70px', borderRadius: '10px' }} /> : <div style={{ fontWeight: 'bold', fontSize: '18px', ...globalStyle }}><Camera size={22} style={{verticalAlign:'middle', marginRight:'8px'}}/>上傳照片</div>}
+          {image ? <img src={image} style={{ height: '70px', borderRadius: '10px' }} alt="preview" /> : <div style={{ fontWeight: 'bold', fontSize: '18px', ...globalStyle }}><Camera size={22} style={{verticalAlign:'middle', marginRight:'8px'}}/>上傳照片</div>}
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
-          {/* 修正：增加顯示更多幣種 */}
           <select style={{ ...inputStyle, ...globalStyle, flex: 1.2 }} value={currency} onChange={e => setCurrency(e.target.value)}>
             {Object.entries(currencyNames).map(([code, name]) => (
               <option key={code} value={`${code} - ${name}`}>{code} - {name}</option>
@@ -321,7 +319,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
 
       {previewImage && (
         <div onClick={() => setPreviewImage(null)} style={{ position: 'fixed', inset: 0, zIndex: 1100, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <img src={previewImage} style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '20px', border: '6px solid white' }} alt="preview" />
+          <img src={previewImage} style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '20px', border: '6px solid white' }} alt="full-preview" />
         </div>
       )}
 

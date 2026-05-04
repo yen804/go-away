@@ -21,7 +21,13 @@ const DestinationModal = ({ trips, currentTrip, onSelect, onAdd, onDelete, onClo
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-20px', marginRight: '-10px' }}>
           <button onClick={onClose} style={{ cursor: 'pointer', border: 'none', background: 'none' }}><X size={30} strokeWidth={3} /></button>
         </div>
-        <h2 style={{ fontSize: '42px', marginBottom: '15px', marginTop: '-10px' }}>去哪裏玩？</h2>
+        <h2 style={{ fontSize: '42px', marginBottom: '5px', marginTop: '-10px' }}>去哪裏玩？</h2>
+        {/* 新增提示文字 */}
+        <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px', color: '#555', lineHeight: '1.4' }}>
+          <div>輸入新旅程可切換</div>
+          <div>不清除瀏覽器，資料不會消失喔</div>
+        </div>
+        
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', marginBottom: '20px' }}>
           {trips.map(t => (
             <div key={t} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>

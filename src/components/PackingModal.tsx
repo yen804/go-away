@@ -65,7 +65,7 @@ const PackingModal = () => {
             if (catItems.length === 0) return null;
             return (
               <div key={cat} className="space-y-2">
-                <h3 className="font-black text-sm bg-[#FFD93D] inline-block px-2 py-1 border-2 border-black">{cat}</h3>
+                <h3 className="font-black text-sm bg-[#FFD93D] inline-block px-2 py-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">{cat}</h3>
                 <div className="space-y-1">
                   {catItems.map(item => (
                     <div key={item.id} className={`flex items-center justify-between p-3 border-2 border-black ${item.checked ? 'bg-gray-100 opacity-50' : 'bg-white'}`}>

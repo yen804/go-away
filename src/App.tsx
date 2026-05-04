@@ -72,8 +72,11 @@ function App() {
             <div className="aspect-video bg-gray-100 border-4 border-black border-dashed flex items-center justify-center font-bold">地圖功能建置中...</div>
           </div>
         )}
+        
+        {/* 這三個組件按鈕會垂直排列在下方 */}
         <DestinationModal />
         <PackingModal />
+        <BuyBuyBuyModal /> 
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-black p-4 z-10">

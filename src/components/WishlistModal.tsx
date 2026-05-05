@@ -292,6 +292,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
           )}
         </div>
 
+        {/* 修正：調整金額欄位容器與子項目比例，使其右側與下方 Buy 按鈕對齊 */}
         <div style={{ display: 'flex', gap: '15px' }}>
           <div onClick={() => setCategory('EAT')} style={{ ...catBtnStyle, backgroundColor: category === 'EAT' ? '#FFD64D' : 'white', ...globalStyle }}>
             <Utensils size={20} /> EAT
@@ -309,8 +310,9 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
           {image ? <img src={image} style={{ height: '70px', borderRadius: '10px' }} alt="preview" /> : <div style={{ fontWeight: 'bold', fontSize: '18px', ...globalStyle }}><Camera size={22} style={{verticalAlign:'middle', marginRight:'8px'}}/>上傳照片</div>}
         </div>
 
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <select style={{ ...inputStyle, ...globalStyle, flex: 1.2 }} value={currency} onChange={e => setCurrency(e.target.value)}>
+        {/* 修正：將 select 與 input 的寬度比例與上方 EAT/BUY 按鈕一致，並確保對齊 */}
+        <div style={{ display: 'flex', gap: '15px' }}>
+          <select style={{ ...inputStyle, ...globalStyle, flex: 1 }} value={currency} onChange={e => setCurrency(e.target.value)}>
             {Object.entries(currencyNames).map(([code, name]) => (
               <option key={code} value={`${code} - ${name}`}>{code} - {name}</option>
             ))}
@@ -354,7 +356,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
   );
 };
 
-const inputStyle = { border: '3px solid black', borderRadius: '15px', padding: '12px', fontSize: '18px', fontWeight: 'bold' as const };
+const inputStyle = { border: '3px solid black', borderRadius: '15px', padding: '12px', fontSize: '18px', fontWeight: 'bold' as const, width: '100%', boxSizing: 'border-box' as const };
 const timeInputStyle = { flex: 1, border: '2px solid black', borderRadius: '10px', padding: '8px' };
 const catBtnStyle = { flex: 1, padding: '15px', border: '3px solid black', borderRadius: '15px', textAlign: 'center' as const, fontWeight: '900' as const, fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' };
 

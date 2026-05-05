@@ -239,28 +239,30 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
               <input placeholder="店家名稱" style={inputStyle} value={storeName} onChange={e => setStoreName(e.target.value)} />
               <input placeholder="地點 / 網址" style={inputStyle} value={locationUrl} onChange={e => setLocationUrl(e.target.value)} />
 
-              {/* DATE & TIME 區塊修正：確保欄位高度、字級與間距統一 */}
+              {/* DATE & TIME 區塊修正：確保四個欄位高度與樣式統一 */}
               <div style={{ border: '3px solid black', borderRadius: '25px', padding: '15px' }}>
-                <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '10px', fontWeight: 'bold' }}>DATE & TIME</div>
+                <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '12px', fontWeight: 'bold' }}>DATE & TIME</div>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '10px' }}>
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                {/* 第一排：預定日期 與 付款方式 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>預定日期</span>
                       <input type="date" value={date} style={gridInput} onChange={e => setDate(e.target.value)} />
                    </div>
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>付款方式</span>
                       <input placeholder="選擇或輸入" list="pay-hist" style={gridInput} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
                       <datalist id="pay-hist">{historyPayments.map(p => <option key={p} value={p} />)}</datalist>
                    </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                {/* 第二排：預定時間 與 商品圖片 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>預定時間</span>
                       <input type="time" value={time} style={gridInput} onChange={e => setTime(e.target.value)} />
                    </div>
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>商品圖片</span>
                       <div onClick={() => fileInputRef.current?.click()} style={{ ...gridInput, border: '3px dashed black', cursor: 'pointer', backgroundColor: '#F9F9F9' }}>
                         <Camera size={16} /> <span style={{ fontSize: '12px' }}>{image ? '已選取' : '上傳圖片'}</span>
@@ -272,7 +274,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                 {[{ id: '自己', icon: <User size={18}/> }, { id: '代購', icon: <ShoppingBag size={18}/> }, { id: '伴手禮', icon: <Gift size={18}/> }].map(t => (
-                  <button key={t.id} onClick={() => setSelectedType(t.id)} style={{ ...gridInput, backgroundColor: selectedType === t.id ? '#FFD64D' : 'white', height: '50px', flexDirection: 'column', gap: 2 }}>
+                  <button key={t.id} onClick={() => setSelectedType(t.id)} style={{ ...gridInput, backgroundColor: selectedType === t.id ? '#FFD64D' : 'white', height: '52px', flexDirection: 'column', gap: 2 }}>
                     {t.icon} <span style={{fontSize:'12px'}}>{t.id}</span>
                   </button>
                 ))}

@@ -163,14 +163,21 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
         {items.map(item => (
           <div key={item.id} style={{ position: 'relative', marginBottom: '25px' }}>
             <div style={{ backgroundColor: item.completed ? COMPLETED_GRAY : 'white', border: '4px solid black', borderRadius: '40px', padding: '20px' }}>
+              
+              {/* 商品名稱：置頂並靠左對齊 */}
+              <div style={{ fontSize: '24px', fontWeight: '900', marginBottom: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...globalStyle }}>
+                {item.itemName}
+              </div>
+
               <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
-                <div onClick={() => toggleComplete(item.id)} style={{ width: '55px', height: '65px', backgroundColor: item.completed ? '#666' : '#F8F9FA', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '3px solid black', flexShrink: 0, cursor: 'pointer' }}>
-                  {item.completed ? <CheckCircle2 color="white" size={24} /> : (item.category === 'EAT' ? <Utensils color="#FF5A5A" size={24} /> : <ShoppingBag color="#3B82F6" size={24} />)}
+                
+                {/* 分類圖示：下移並縮小尺寸 */}
+                <div onClick={() => toggleComplete(item.id)} style={{ width: '40px', height: '45px', backgroundColor: item.completed ? '#666' : '#F8F9FA', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '3px solid black', flexShrink: 0, cursor: 'pointer', marginTop: '2px' }}>
+                  {item.completed ? <CheckCircle2 color="white" size={20} /> : (item.category === 'EAT' ? <Utensils color="#FF5A5A" size={20} /> : <ShoppingBag color="#3B82F6" size={20} />)}
                 </div>
                 
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '24px', fontWeight: '900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '4px', ...globalStyle }}>{item.itemName}</div>
-                  
+                  {/* 店名：與圖示同高 */}
                   <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'black', marginBottom: '4px', ...globalStyle }}>
                     {item.location || '未指定店家'}
                   </div>
@@ -185,8 +192,8 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
                     </span>
                   </div>
                   
-                  {/* 左側：營業時段 */}
-                  <div style={{ marginLeft: '-70px', marginTop: '5px' }}>
+                  {/* 營業時段 */}
+                  <div style={{ marginLeft: '-55px', marginTop: '5px' }}>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                       <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#444', whiteSpace: 'nowrap', ...globalStyle }}>營業時段：</span>
                       <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#444', ...globalStyle }}>
@@ -197,13 +204,12 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
                   </div>
                 </div>
 
-                {/* 右側：圖片 + 下方分列顯示的打烊與休息 */}
+                {/* 右側：圖片與狀態 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start', flexShrink: 0 }}>
                   <div onClick={() => item.image && setPreviewImage(item.image)} style={{ width: '85px', height: '85px', border: '3px solid black', borderRadius: '15px', overflow: 'hidden', cursor: item.image ? 'zoom-in' : 'default', backgroundColor: '#EEE' }}>
                     {item.image ? <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="wish" /> : null}
                   </div>
 
-                  {/* 分開為二列，並精準對齊圖片左側 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '85px' }}>
                     <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#666', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', ...globalStyle }}>
                       <Clock size={14} /> 打烊: {item.time2_end || item.time1_end}
@@ -220,7 +226,6 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: '18px', fontWeight: '900', ...globalStyle }}>
                   數量 : {item.quantity}
-                  {/* 此處 item.currency 會帶入包含符號的文字 (例如 "TWD - 台幣 $")，透過 split 切割只取符號部分或全顯示 */}
                   <span style={{ marginLeft: '20px' }}>{item.currency.split(' ').pop()} {item.price}</span>
                 </div>
                 <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#666', ...globalStyle }}>

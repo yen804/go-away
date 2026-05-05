@@ -39,6 +39,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   const [view, setView] = useState<'LIST' | 'ADD'>('LIST');
   const [items, setItems] = useState<BuyItem[]>([]);
   
+  // 狀態宣告
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState('');
   const [storeName, setStoreName] = useState('');
@@ -58,6 +59,9 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   const [time1, setTime1] = useState({ start: '10:00', end: '20:00' });
   const [time2, setTime2] = useState({ start: '', end: '' });
   const [showTime2, setShowTime2] = useState(false);
+  
+  // 新增：圖片預覽狀態
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const days = ['日', '一', '二', '三', '四', '五', '六'];
@@ -97,29 +101,29 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   };
 
   const handleSave = () => {
-    if (!itemName.trim()) return;
+    if (!itemName) return;
     const allItems = JSON.parse(localStorage.getItem('buy_buy_buy_v10') || '[]');
     
-    // 強化儲存資料結構，確保即便欄位留空也不會造成儲存失敗
+    // 修正：確保所有欄位都有預設值，避免資料結構毀損
     const newItem: BuyItem = {
       id: editingId || Date.now(),
       trip: currentTrip,
-      itemName, 
-      quantity: quantity || '1', 
-      storeName: storeName || '', 
-      locationUrl: locationUrl || '', 
-      paymentMethod: paymentMethod || '', 
-      date: date || '', 
+      itemName: itemName || '',
+      quantity: quantity || '1',
+      storeName: storeName || '',
+      locationUrl: locationUrl || '',
+      paymentMethod: paymentMethod || '',
+      date: date || '',
       time: time || '',
-      selectedType, 
-      buyerName: buyerName || '', 
-      currency, 
-      price: price || '0', 
-      taxFreeJpy: taxFreeJpy || '0', 
-      image,
+      selectedType: selectedType || '自己',
+      buyerName: buyerName || '',
+      currency: currency || 'JPY',
+      price: price || '0',
+      taxFreeJpy: taxFreeJpy || '0',
+      image: image || null,
       completed: editingId ? (items.find(i => i.id === editingId)?.completed || false) : false,
-      restDays: restDays || [], 
-      time1_start: time1.start || '10:00', 
+      restDays: restDays || [],
+      time1_start: time1.start || '10:00',
       time1_end: time1.end || '20:00',
       ...(showTime2 && time2.start && { time2_start: time2.start, time2_end: time2.end || '20:00' }),
     };
@@ -181,6 +185,17 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
 
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 }}>
+      {/* 圖片放大預覽層 */}
+      {previewImage && (
+        <div 
+          onClick={() => setPreviewImage(null)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}
+        >
+          <img src={previewImage} style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '10px', border: '4px solid white' }} alt="Preview" />
+          <div style={{ position: 'absolute', top: '30px', right: '30px', color: 'white' }}><X size={40} /></div>
+        </div>
+      )}
+
       <div style={{ backgroundColor: THEME_ORANGE, width: '100%', maxWidth: '420px', height: '92vh', borderRadius: '50px', border: '6px solid black', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         
         {view === 'LIST' ? (
@@ -214,8 +229,12 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                         </div>
                       </div>
 
-                      <div style={{ width: '85px', height: '85px', borderRadius: '15px', border: '3px solid black', overflow: 'hidden', backgroundColor: '#EEE', flexShrink: 0 }}>
-                        {item.image ? <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                      {/* 修正：點擊圖片放大 */}
+                      <div 
+                        onClick={() => item.image && setPreviewImage(item.image)}
+                        style={{ width: '85px', height: '85px', borderRadius: '15px', border: '3px solid black', overflow: 'hidden', backgroundColor: '#EEE', flexShrink: 0, cursor: item.image ? 'zoom-in' : 'default' }}
+                      >
+                        {item.image ? <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="item" /> : null}
                       </div>
                     </div>
 
@@ -243,7 +262,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '900', ...baseStyle }}>
                       <div style={{ fontSize: '18px' }}>數量 : {item.quantity}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '18px' }}>{item.currency} {Number(item.price).toLocaleString()}</span>
+                        <span style={{ fontSize: '18px' }}>{item.currency} {Number(item.price || 0).toLocaleString()}</span>
                         <span style={{ border: '3px solid black', padding: '2px 15px', borderRadius: '20px', backgroundColor: 'white', fontSize: '15px' }}>{item.buyerName}</span>
                       </div>
                     </div>
@@ -283,28 +302,32 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
               <input placeholder="店家名稱" style={inputStyle} value={storeName} onChange={e => setStoreName(e.target.value)} />
               <input placeholder="地點 / 網址" style={inputStyle} value={locationUrl} onChange={e => setLocationUrl(e.target.value)} />
 
-              {/* DATE & TIME 區塊修正 */}
+              {/* DATE & TIME 區塊 */}
               <div style={{ border: '3px solid black', borderRadius: '25px', padding: '15px', backgroundColor: 'white' }}>
                 <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>DATE & TIME</div>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                    <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginBottom: '4px', paddingLeft: '5px' }}>預定日期</span>
-                      <input type="date" value={date} style={gridInput} onChange={e => setDate(e.target.value)} />
+                      <input type="date" value={date} style={{ ...gridInput, height: '50px', padding: '0 15px', appearance: 'none', WebkitAppearance: 'none' }} onChange={e => setDate(e.target.value)} />
                    </div>
                    <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginBottom: '4px', paddingLeft: '5px' }}>付款方式</span>
-                      <input placeholder="選擇或輸入" list="pay-hist" style={gridInput} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
+                      <input placeholder="選擇或輸入" list="pay-hist" style={{ ...gridInput, height: '50px', padding: '0 15px' }} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
                       <datalist id="pay-hist">{historyPayments.map(p => <option key={p} value={p} />)}</datalist>
                    </div>
                    <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginBottom: '4px', paddingLeft: '5px' }}>預定時間</span>
-                      <input type="time" value={time} style={gridInput} onChange={e => setTime(e.target.value)} />
+                      <input type="time" value={time} style={{ ...gridInput, height: '50px', padding: '0 15px', appearance: 'none', WebkitAppearance: 'none' }} onChange={e => setTime(e.target.value)} />
                    </div>
                    <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginBottom: '4px', paddingLeft: '5px' }}>商品圖片</span>
-                      <div onClick={() => fileInputRef.current?.click()} style={{ ...gridInput, border: '3px dashed black', cursor: 'pointer', backgroundColor: '#F9F9F9', justifyContent: 'center', padding: 0 }}>
-                        <Camera size={16} /> <span style={{ fontSize: '12px', marginLeft: '4px' }}>{image ? '已選取' : '上傳'}</span>
+                      <div 
+                        onClick={() => fileInputRef.current?.click()} 
+                        style={{ ...gridInput, height: '50px', border: '3px dashed black', cursor: 'pointer', backgroundColor: '#F9F9F9', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0' }}
+                      >
+                        <Camera size={18} />
+                        <span style={{ fontSize: '12px', marginLeft: '4px' }}>{image ? '已選取' : '上傳圖片'}</span>
                         <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if(f){ const r = new FileReader(); r.onloadend = () => setImage(r.result as string); r.readAsDataURL(f); } }} />
                       </div>
                    </div>
@@ -313,7 +336,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                 {[{ id: '自己', icon: <User size={18}/> }, { id: '代購', icon: <ShoppingBag size={18}/> }, { id: '伴手禮', icon: <Gift size={18}/> }].map(t => (
-                  <button key={t.id} onClick={() => setSelectedType(t.id)} style={{ ...gridInput, backgroundColor: selectedType === t.id ? '#FFD64D' : 'white', height: '52px', flexDirection: 'column', gap: 2, padding: 0 }}>
+                  <button key={t.id} onClick={() => setSelectedType(t.id)} style={{ ...gridInput, backgroundColor: selectedType === t.id ? '#FFD64D' : 'white', height: '52px', flexDirection: 'column', gap: 2 }}>
                     {t.icon} <span style={{fontSize:'12px'}}>{t.id}</span>
                   </button>
                 ))}
@@ -385,8 +408,8 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   );
 };
 
-// 樣式常數修正：加入 boxSizing 與更精確的 padding 確保文字不貼邊
-const inputStyle: React.CSSProperties = { border: '3px solid black', borderRadius: '15px', padding: '12px 15px', fontSize: '18px', fontWeight: 'bold', width: '100%', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif' };
-const gridInput: React.CSSProperties = { border: '3px solid black', borderRadius: '12px', padding: '0 12px', fontSize: '14px', fontWeight: 'bold', width: '100%', height: '50px', display: 'flex', alignItems: 'center', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif', backgroundColor: 'white', appearance: 'none', WebkitAppearance: 'none' };
+// 樣式常數
+const inputStyle: React.CSSProperties = { border: '3px solid black', borderRadius: '15px', padding: '12px', fontSize: '18px', fontWeight: 'bold', width: '100%', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif' };
+const gridInput: React.CSSProperties = { border: '3px solid black', borderRadius: '12px', padding: '8px', fontSize: '14px', fontWeight: 'bold', width: '100%', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif', backgroundColor: 'white' };
 
 export default BuyBuyBuyList;

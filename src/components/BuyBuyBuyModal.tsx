@@ -239,31 +239,31 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
               <input placeholder="店家名稱" style={inputStyle} value={storeName} onChange={e => setStoreName(e.target.value)} />
               <input placeholder="地點 / 網址" style={inputStyle} value={locationUrl} onChange={e => setLocationUrl(e.target.value)} />
 
-              {/* DATE & TIME 區塊排版優化 */}
+              {/* DATE & TIME 區塊修正：確保欄位高度、字級與間距統一 */}
               <div style={{ border: '3px solid black', borderRadius: '25px', padding: '15px' }}>
                 <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '10px', fontWeight: 'bold' }}>DATE & TIME</div>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '10px' }}>
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>預定日期</span>
-                      <input type="date" value={date} style={{ ...gridInput, padding: '4px 6px' }} onChange={e => setDate(e.target.value)} />
+                      <input type="date" value={date} style={gridInput} onChange={e => setDate(e.target.value)} />
                    </div>
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>付款方式</span>
-                      <input placeholder="選擇或輸入" list="pay-hist" style={{ ...gridInput, padding: '4px 6px' }} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
+                      <input placeholder="選擇或輸入" list="pay-hist" style={gridInput} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
                       <datalist id="pay-hist">{historyPayments.map(p => <option key={p} value={p} />)}</datalist>
                    </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>預定時間</span>
-                      <input type="time" value={time} style={{ ...gridInput, padding: '4px 6px' }} onChange={e => setTime(e.target.value)} />
+                      <input type="time" value={time} style={gridInput} onChange={e => setTime(e.target.value)} />
                    </div>
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>商品圖片</span>
                       <div onClick={() => fileInputRef.current?.click()} style={{ ...gridInput, border: '3px dashed black', cursor: 'pointer', backgroundColor: '#F9F9F9' }}>
-                        <Camera size={14} /> <span style={{ fontSize: '10px' }}>{image ? '已選取' : '上傳圖片'}</span>
+                        <Camera size={16} /> <span style={{ fontSize: '12px' }}>{image ? '已選取' : '上傳圖片'}</span>
                         <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if(f){ const r = new FileReader(); r.onloadend = () => setImage(r.result as string); r.readAsDataURL(f); } }} />
                       </div>
                    </div>

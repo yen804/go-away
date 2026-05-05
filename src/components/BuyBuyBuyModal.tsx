@@ -239,19 +239,19 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
               <input placeholder="店家名稱" style={inputStyle} value={storeName} onChange={e => setStoreName(e.target.value)} />
               <input placeholder="地點 / 網址" style={inputStyle} value={locationUrl} onChange={e => setLocationUrl(e.target.value)} />
 
-              {/* DATE & TIME 區塊修正：確保四個欄位高度與樣式統一 */}
+              {/* DATE & TIME 區塊修正：統一四個欄位的大小、間距與內縮 */}
               <div style={{ border: '3px solid black', borderRadius: '25px', padding: '15px' }}>
-                <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '12px', fontWeight: 'bold' }}>DATE & TIME</div>
+                <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '10px', fontWeight: 'bold' }}>DATE & TIME</div>
                 
                 {/* 第一排：預定日期 與 付款方式 */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>預定日期</span>
-                      <input type="date" value={date} style={gridInput} onChange={e => setDate(e.target.value)} />
+                      <input type="date" value={date} style={{ ...gridInput, paddingLeft: '12px', paddingRight: '12px' }} onChange={e => setDate(e.target.value)} />
                    </div>
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>付款方式</span>
-                      <input placeholder="選擇或輸入" list="pay-hist" style={gridInput} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
+                      <input placeholder="選擇或輸入" list="pay-hist" style={{ ...gridInput, paddingLeft: '12px', paddingRight: '12px' }} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
                       <datalist id="pay-hist">{historyPayments.map(p => <option key={p} value={p} />)}</datalist>
                    </div>
                 </div>
@@ -260,7 +260,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>預定時間</span>
-                      <input type="time" value={time} style={gridInput} onChange={e => setTime(e.target.value)} />
+                      <input type="time" value={time} style={{ ...gridInput, paddingLeft: '12px', paddingRight: '12px' }} onChange={e => setTime(e.target.value)} />
                    </div>
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>商品圖片</span>

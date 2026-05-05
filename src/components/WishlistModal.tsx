@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, ChevronLeft, MapPin, Clock, Calendar, Pencil, Trash2, ShoppingCart, CheckCircle2, Utensils, ShoppingBag, Globe } from 'lucide-react';
 
-// 幣種定義
+// 幣種定義（增加符號）
 const currencyNames: { [key: string]: string } = {
-  JPY: '日圓', KRW: '韓幣', USD: '美金', GBP: '英鎊', AUD: '澳幣',
-  HKD: '港幣', VND: '越南幣', PHP: '披索', IDR: '印尼盾', CNY: '人民幣', SGD: '新幣', TWD: '台幣'
+  JPY: '日圓 ¥', KRW: '韓幣 ₩', USD: '美金 $', GBP: '英鎊 £', AUD: '澳幣 $',
+  HKD: '港幣 $', VND: '越南幣 ₫', PHP: '披索 ₱', IDR: '印尼盾 Rp', CNY: '人民幣 ¥', SGD: '新幣 $', TWD: '台幣 $'
 };
 
 const DeleteConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void, onCancel: () => void }) => (
@@ -77,7 +77,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
   const [location, setLocation] = useState('');
   const [link, setLink] = useState('');
   const [price, setPrice] = useState('');
-  const [currency, setCurrency] = useState('JPY - 日圓');
+  const [currency, setCurrency] = useState('JPY - 日圓 ¥');
   const [taxFreePrice, setTaxFreePrice] = useState('');
   const [category, setCategory] = useState<'EAT' | 'BUY'>('BUY');
   const [image, setImage] = useState<string | null>(null);
@@ -220,7 +220,9 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: '18px', fontWeight: '900', ...globalStyle }}>
                   數量 : {item.quantity}
-                  <span style={{ marginLeft: '20px' }}>{item.currency.split(' ')[0]} {item.price}</span>
+                  <span style={{ marginLeft: '20px' }}>
+                    {item.currency.split(' ').pop()} {item.price}
+                  </span>
                 </div>
                 <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#666', ...globalStyle }}>
                   {item.category === 'EAT' ? '美食清單' : '購物清單'}

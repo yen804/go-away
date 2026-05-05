@@ -35,6 +35,39 @@ interface BuyItem {
   time2_end?: string;
 }
 
+// 刪除確認視窗組件
+const DeleteConfirmModal = ({ onConfirm, onCancel }: { onConfirm: () => void, onCancel: () => void }) => (
+  <div style={{
+    position: 'fixed', inset: 0, zIndex: 3000, 
+    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', 
+    justifyContent: 'center', alignItems: 'center'
+  }}>
+    <div style={{
+      backgroundColor: 'white', width: '320px', borderRadius: '40px', 
+      padding: '40px 20px', textAlign: 'center', border: '4px solid black',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px',
+      boxShadow: '0px 10px 0px rgba(0,0,0,0.2)'
+    }}>
+      <div style={{ color: '#FF5A5A', fontSize: '42px', fontWeight: '900', fontFamily: 'MORITAD' }}>OOPS!</div>
+      <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'black', fontFamily: 'MORITAD' }}>確定不要了？</div>
+      <button 
+        onClick={onConfirm}
+        style={{
+          width: '100%', backgroundColor: 'black', color: 'white', 
+          borderRadius: '25px', padding: '15px', fontSize: '22px', 
+          fontWeight: 'bold', border: 'none', cursor: 'pointer',
+          fontFamily: 'MORITAD', marginTop: '10px'
+        }}
+      >
+        OK
+      </button>
+      <div onClick={onCancel} style={{ fontSize: '16px', color: '#666', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'MORITAD' }}>
+        返回
+      </div>
+    </div>
+  </div>
+);
+
 const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTrip: string }> = ({ isOpen, onClose, currentTrip }) => {
   const [view, setView] = useState<'LIST' | 'ADD'>('LIST');
   const [items, setItems] = useState<BuyItem[]>([]);
@@ -54,6 +87,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   const [taxFreeJpy, setTaxFreeJpy] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
 
   const [restDays, setRestDays] = useState<string[]>([]);
   const [time1, setTime1] = useState({ start: '10:00', end: '20:00' });
@@ -104,7 +138,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
     if (!itemName) return;
     const allItems = JSON.parse(localStorage.getItem('buy_buy_buy_v10') || '[]');
     
-    // 修正：補齊物件結構，確保第一次填寫且帶有圖片時能完整儲存
+    // 修正：確保第一次填寫時 image 也能正確帶入 newItem
     const newItem: BuyItem = {
       id: editingId || Date.now(),
       trip: currentTrip,
@@ -120,7 +154,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
       currency: currency || 'JPY',
       price: price || '0',
       taxFreeJpy: taxFreeJpy || '0',
-      image: image, // 確保圖片 Base64 正常存入
+      image: image, 
       completed: editingId ? (items.find(i => i.id === editingId)?.completed || false) : false,
       restDays: restDays || [],
       time1_start: time1.start || '10:00',
@@ -182,6 +216,14 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
     setView('ADD');
   };
 
+  const handleDelete = (id: number) => {
+    const allItems = JSON.parse(localStorage.getItem('buy_buy_buy_v10') || '[]');
+    const updatedAll = allItems.filter((i: any) => i.id !== id);
+    localStorage.setItem('buy_buy_buy_v10', JSON.stringify(updatedAll));
+    setItems(updatedAll.filter((i: any) => i.trip === currentTrip));
+    setShowDeleteConfirm(null);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -195,6 +237,14 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
           <img src={previewImage} style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '10px', border: '4px solid white' }} alt="Preview" />
           <div style={{ position: 'absolute', top: '30px', right: '30px', color: 'white' }}><X size={40} /></div>
         </div>
+      )}
+
+      {/* 刪除確認視窗 */}
+      {showDeleteConfirm && (
+        <DeleteConfirmModal 
+          onConfirm={() => handleDelete(showDeleteConfirm)} 
+          onCancel={() => setShowDeleteConfirm(null)} 
+        />
       )}
 
       <div style={{ backgroundColor: THEME_ORANGE, width: '100%', maxWidth: '420px', height: '92vh', borderRadius: '50px', border: '6px solid black', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -270,14 +320,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
 
                   <div style={{ position: 'absolute', right: '-12px', top: '15px', display: 'flex', flexDirection: 'column', gap: '10px', zIndex: 10 }}>
                     <button onClick={() => handleEdit(item)} style={{ background: 'white', border: '2px solid black', borderRadius: '10px', padding: '6px', boxShadow: '2px 2px 0px black' }}><Edit2 size={18}/></button>
-                    <button onClick={() => { 
-                      if(window.confirm('確定刪除？')) { 
-                        const allItems = JSON.parse(localStorage.getItem('buy_buy_buy_v10') || '[]');
-                        const updatedAll = allItems.filter((i: any) => i.id !== item.id);
-                        localStorage.setItem('buy_buy_buy_v10', JSON.stringify(updatedAll));
-                        setItems(updatedAll.filter((i: any) => i.trip === currentTrip));
-                      } 
-                    }} style={{ background: 'white', border: '2px solid black', borderRadius: '10px', padding: '6px', color: 'red', boxShadow: '2px 2px 0px black' }}><Trash2 size={18}/></button>
+                    <button onClick={() => setShowDeleteConfirm(item.id)} style={{ background: 'white', border: '2px solid black', borderRadius: '10px', padding: '6px', color: 'red', boxShadow: '2px 2px 0px black' }}><Trash2 size={18}/></button>
                   </div>
                 </div>
               ))}

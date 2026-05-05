@@ -164,7 +164,6 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
           <div key={item.id} style={{ position: 'relative', marginBottom: '25px' }}>
             <div style={{ backgroundColor: item.completed ? COMPLETED_GRAY : 'white', border: '4px solid black', borderRadius: '40px', padding: '20px' }}>
               <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
-                {/* 左側分類圖示按鈕 */}
                 <div onClick={() => toggleComplete(item.id)} style={{ width: '55px', height: '65px', backgroundColor: item.completed ? '#666' : '#F8F9FA', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '3px solid black', flexShrink: 0, cursor: 'pointer' }}>
                   {item.completed ? <CheckCircle2 color="white" size={24} /> : (item.category === 'EAT' ? <Utensils color="#FF5A5A" size={24} /> : <ShoppingBag color="#3B82F6" size={24} />)}
                 </div>
@@ -198,18 +197,18 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
                   </div>
                 </div>
 
-                {/* 右側：圖片 + 下方打烊/休息 (並列於營業時段右側) */}
+                {/* 右側：圖片 + 下方分列顯示的打烊與休息 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start', flexShrink: 0 }}>
                   <div onClick={() => item.image && setPreviewImage(item.image)} style={{ width: '85px', height: '85px', border: '3px solid black', borderRadius: '15px', overflow: 'hidden', cursor: item.image ? 'zoom-in' : 'default', backgroundColor: '#EEE' }}>
                     {item.image ? <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="wish" /> : null}
                   </div>
 
-                  {/* 精準對齊圖片左側並列為兩列 */}
+                  {/* 分開為二列，並精準對齊圖片左側 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '85px' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#666', display: 'flex', alignItems: 'center', gap: '4px', ...globalStyle }}>
+                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#666', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', ...globalStyle }}>
                       <Clock size={14} /> 打烊: {item.time2_end || item.time1_end}
                     </div>
-                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#666', display: 'flex', alignItems: 'center', gap: '4px', ...globalStyle }}>
+                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#666', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', ...globalStyle }}>
                       <Calendar size={14} /> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '無'}
                     </div>
                   </div>

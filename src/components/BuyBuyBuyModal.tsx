@@ -8,7 +8,7 @@ const exchangeRates: { [key: string]: number } = {
 
 const currencyNames: { [key: string]: string } = {
   JPY: '日圓', KRW: '韓幣', USD: '美金', GBP: '英鎊', AUD: '澳幣',
-  HKD: '港幣', VND: '越南幣', PHP: '披索', IDR: '印尼盾', CNY: '人民幣', SGD: '新幣'
+  HKD: '港幣', VND: '越南幣', PHP: '披索', IDR: '英尼盾', CNY: '人民幣', SGD: '新幣'
 };
 
 interface BuyItem {
@@ -157,7 +157,6 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                       {item.itemName}
                     </div>
 
-                    {/* 上排：圖示、店家資訊、圖片 */}
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
                       <div onClick={() => toggleComplete(item.id)} style={{ width: '40px', height: '45px', borderRadius: '12px', border: '3px solid black', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: item.completed ? '#666' : '#F8F9FA', flexShrink: 0, marginTop: '2px' }}>
                         {item.completed ? <CheckCircle2 color="white" size={20} /> : (item.selectedType === '代購' ? <ShoppingBag color="#3B82F6" size={20} /> : item.selectedType === '伴手禮' ? <Gift color="#FF5A5A" size={20} /> : <User color="black" size={20} />)}
@@ -176,7 +175,6 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                       </div>
                     </div>
 
-                    {/* 下排：營業時段與狀態資訊 (精準對齊分類圖示下方) */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '10px' }}>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                         <span style={{ fontSize: '15px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', whiteSpace: 'nowrap', ...baseStyle }}>營業時段：</span>
@@ -241,6 +239,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
               <input placeholder="店家名稱" style={inputStyle} value={storeName} onChange={e => setStoreName(e.target.value)} />
               <input placeholder="地點 / 網址" style={inputStyle} value={locationUrl} onChange={e => setLocationUrl(e.target.value)} />
 
+              {/* DATE & TIME 修正區塊 */}
               <div style={{ border: '3px solid black', borderRadius: '25px', padding: '15px' }}>
                 <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '8px', fontWeight: 'bold' }}>DATE & TIME</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -248,7 +247,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                   <input placeholder="付款方式" list="pay-hist" style={gridInput} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
                   <datalist id="pay-hist">{historyPayments.map(p => <option key={p} value={p} />)}</datalist>
                   <input type="time" value={time} style={gridInput} onChange={e => setTime(e.target.value)} />
-                  <div onClick={() => fileInputRef.current?.click()} style={{ ...gridInput, border: '3px dashed black', cursor: 'pointer', height: '40px' }}>
+                  <div onClick={() => fileInputRef.current?.click()} style={{ ...gridInput, border: '3px dashed black', cursor: 'pointer' }}>
                     <Camera size={18} /> <span>{image ? '已選取' : '上傳圖片'}</span>
                     <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if(f){ const r = new FileReader(); r.onloadend = () => setImage(r.result as string); r.readAsDataURL(f); } }} />
                   </div>
@@ -330,6 +329,6 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
 };
 
 const inputStyle: React.CSSProperties = { border: '3px solid black', borderRadius: '15px', padding: '12px', fontSize: '18px', fontWeight: 'bold', width: '100%', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif' };
-const gridInput: React.CSSProperties = { border: '3px solid black', borderRadius: '12px', padding: '6px', fontSize: '14px', fontWeight: 'bold', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif', backgroundColor: 'white' };
+const gridInput: React.CSSProperties = { border: '3px solid black', borderRadius: '12px', padding: '6px', fontSize: '14px', fontWeight: 'bold', width: '100%', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif', backgroundColor: 'white' };
 
 export default BuyBuyBuyList;

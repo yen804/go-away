@@ -47,7 +47,7 @@ const ToolModal: React.FC<ToolModalProps> = ({ onClose }) => {
     { id: '3', name: '轉乘案內 (Jorudan)', url: 'https://www.jorudan.co.jp/', icon: '🚇' },
     { id: '4', name: '天氣預報 (Tenki.jp)', url: 'https://tenki.jp/', icon: '☁️' },
     { id: '5', name: '台灣銀行匯率', url: 'https://rate.bot.com.tw/xrt?Lang=zh-TW', icon: '⚖️' },
-    { id: '6', name: 'Trip.com', url: 'https://tw.trip.com/', icon: '🏨' },
+    { id: '6', name: 'Trip.com', url: 'https://tw.trip.com/', icon: '✈️' },
     { id: '7', name: 'Skyscanner', url: 'https://www.skyscanner.com.tw/', icon: '✈️' },
   ];
 

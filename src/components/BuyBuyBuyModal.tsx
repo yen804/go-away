@@ -39,7 +39,6 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   const [view, setView] = useState<'LIST' | 'ADD'>('LIST');
   const [items, setItems] = useState<BuyItem[]>([]);
   
-  // 狀態宣告
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState('');
   const [storeName, setStoreName] = useState('');
@@ -76,7 +75,6 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
     }
   }, [isOpen, currentTrip]);
 
-  // 修正：確保這裡使用的是 setItemName 而非 setTimeName
   const resetForm = () => {
     setEditingId(null); 
     setItemName(''); 
@@ -99,17 +97,31 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   };
 
   const handleSave = () => {
-    if (!itemName) return;
+    if (!itemName.trim()) return;
     const allItems = JSON.parse(localStorage.getItem('buy_buy_buy_v10') || '[]');
     
+    // 強化儲存資料結構，確保即便欄位留空也不會造成儲存失敗
     const newItem: BuyItem = {
       id: editingId || Date.now(),
       trip: currentTrip,
-      itemName, quantity, storeName, locationUrl, paymentMethod, date, time,
-      selectedType, buyerName, currency, price, taxFreeJpy, image,
+      itemName, 
+      quantity: quantity || '1', 
+      storeName: storeName || '', 
+      locationUrl: locationUrl || '', 
+      paymentMethod: paymentMethod || '', 
+      date: date || '', 
+      time: time || '',
+      selectedType, 
+      buyerName: buyerName || '', 
+      currency, 
+      price: price || '0', 
+      taxFreeJpy: taxFreeJpy || '0', 
+      image,
       completed: editingId ? (items.find(i => i.id === editingId)?.completed || false) : false,
-      restDays, time1_start: time1.start, time1_end: time1.end,
-      ...(showTime2 && { time2_start: time2.start, time2_end: time2.end }),
+      restDays: restDays || [], 
+      time1_start: time1.start || '10:00', 
+      time1_end: time1.end || '20:00',
+      ...(showTime2 && time2.start && { time2_start: time2.start, time2_end: time2.end || '20:00' }),
     };
 
     const updatedAll = editingId 
@@ -141,7 +153,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
 
   const handleEdit = (item: BuyItem) => {
     setEditingId(item.id); 
-    setItemName(item.itemName); // 修正處
+    setItemName(item.itemName);
     setQuantity(item.quantity); 
     setStoreName(item.storeName);
     setLocationUrl(item.locationUrl); 
@@ -271,64 +283,37 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
               <input placeholder="店家名稱" style={inputStyle} value={storeName} onChange={e => setStoreName(e.target.value)} />
               <input placeholder="地點 / 網址" style={inputStyle} value={locationUrl} onChange={e => setLocationUrl(e.target.value)} />
 
-{/* DATE & TIME 區塊 - 強制對齊版本 */}
-<div style={{ border: '3px solid black', borderRadius: '25px', padding: '15px', backgroundColor: 'white' }}>
-  <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>DATE & TIME</div>
-  
-  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-     {/* 預定日期 */}
-     <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginBottom: '4px', paddingLeft: '5px' }}>預定日期</span>
-        <input 
-          type="date" 
-          value={date} 
-          style={{ ...gridInput, height: '50px', padding: '0 15px', appearance: 'none', WebkitAppearance: 'none' }} 
-          onChange={e => setDate(e.target.value)} 
-        />
-     </div>
-
-     {/* 付款方式 */}
-     <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginBottom: '4px', paddingLeft: '5px' }}>付款方式</span>
-        <input 
-          placeholder="選擇或輸入" 
-          list="pay-hist" 
-          style={{ ...gridInput, height: '50px', padding: '0 15px' }} 
-          value={paymentMethod} 
-          onChange={e => setPaymentMethod(e.target.value)} 
-        />
-        <datalist id="pay-hist">{historyPayments.map(p => <option key={p} value={p} />)}</datalist>
-     </div>
-
-     {/* 預定時間 */}
-     <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginBottom: '4px', paddingLeft: '5px' }}>預定時間</span>
-        <input 
-          type="time" 
-          value={time} 
-          style={{ ...gridInput, height: '50px', padding: '0 15px', appearance: 'none', WebkitAppearance: 'none' }} 
-          onChange={e => setTime(e.target.value)} 
-        />
-     </div>
-
-     {/* 商品圖片 */}
-     <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginBottom: '4px', paddingLeft: '5px' }}>商品圖片</span>
-        <div 
-          onClick={() => fileInputRef.current?.click()} 
-          style={{ ...gridInput, height: '50px', border: '3px dashed black', cursor: 'pointer', backgroundColor: '#F9F9F9', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0' }}
-        >
-          <Camera size={18} />
-          <span style={{ fontSize: '12px', marginLeft: '4px' }}>{image ? '已選取' : '上傳圖片'}</span>
-          <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if(f){ const r = new FileReader(); r.onloadend = () => setImage(r.result as string); r.readAsDataURL(f); } }} />
-        </div>
-     </div>
-  </div>
-</div>
+              {/* DATE & TIME 區塊修正 */}
+              <div style={{ border: '3px solid black', borderRadius: '25px', padding: '15px', backgroundColor: 'white' }}>
+                <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>DATE & TIME</div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                   <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginBottom: '4px', paddingLeft: '5px' }}>預定日期</span>
+                      <input type="date" value={date} style={gridInput} onChange={e => setDate(e.target.value)} />
+                   </div>
+                   <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginBottom: '4px', paddingLeft: '5px' }}>付款方式</span>
+                      <input placeholder="選擇或輸入" list="pay-hist" style={gridInput} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
+                      <datalist id="pay-hist">{historyPayments.map(p => <option key={p} value={p} />)}</datalist>
+                   </div>
+                   <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginBottom: '4px', paddingLeft: '5px' }}>預定時間</span>
+                      <input type="time" value={time} style={gridInput} onChange={e => setTime(e.target.value)} />
+                   </div>
+                   <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginBottom: '4px', paddingLeft: '5px' }}>商品圖片</span>
+                      <div onClick={() => fileInputRef.current?.click()} style={{ ...gridInput, border: '3px dashed black', cursor: 'pointer', backgroundColor: '#F9F9F9', justifyContent: 'center', padding: 0 }}>
+                        <Camera size={16} /> <span style={{ fontSize: '12px', marginLeft: '4px' }}>{image ? '已選取' : '上傳'}</span>
+                        <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if(f){ const r = new FileReader(); r.onloadend = () => setImage(r.result as string); r.readAsDataURL(f); } }} />
+                      </div>
+                   </div>
+                </div>
+              </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                 {[{ id: '自己', icon: <User size={18}/> }, { id: '代購', icon: <ShoppingBag size={18}/> }, { id: '伴手禮', icon: <Gift size={18}/> }].map(t => (
-                  <button key={t.id} onClick={() => setSelectedType(t.id)} style={{ ...gridInput, backgroundColor: selectedType === t.id ? '#FFD64D' : 'white', height: '52px', flexDirection: 'column', gap: 2 }}>
+                  <button key={t.id} onClick={() => setSelectedType(t.id)} style={{ ...gridInput, backgroundColor: selectedType === t.id ? '#FFD64D' : 'white', height: '52px', flexDirection: 'column', gap: 2, padding: 0 }}>
                     {t.icon} <span style={{fontSize:'12px'}}>{t.id}</span>
                   </button>
                 ))}
@@ -380,12 +365,12 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
 
               <div style={{ backgroundColor: '#FFD64D', padding: '12px', borderRadius: '15px', border: '3px solid black', display: 'flex', justifyContent: 'space-between', fontWeight: '900', ...baseStyle }}>
                 <span>預估台幣 (TWD)</span>
-                <span>NT$ {Math.round(Number(price) * (exchangeRates[currency] || 0)).toLocaleString()}</span>
+                <span>NT$ {Math.round(Number(price || 0) * (exchangeRates[currency] || 0)).toLocaleString()}</span>
               </div>
               
               <div style={{ backgroundColor: '#D1EAFF', padding: '12px', borderRadius: '15px', border: '3px solid black', display: 'flex', justifyContent: 'space-between', fontWeight: '900', ...baseStyle }}>
                 <span>免稅額 (TWD)</span>
-                <span>NT$ {Math.round(Number(taxFreeJpy) * (exchangeRates[currency] || 0)).toLocaleString()}</span>
+                <span>NT$ {Math.round(Number(taxFreeJpy || 0) * (exchangeRates[currency] || 0)).toLocaleString()}</span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
@@ -400,8 +385,8 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   );
 };
 
-// 樣式常數
-const inputStyle: React.CSSProperties = { border: '3px solid black', borderRadius: '15px', padding: '12px', fontSize: '18px', fontWeight: 'bold', width: '100%', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif' };
-const gridInput: React.CSSProperties = { border: '3px solid black', borderRadius: '12px', padding: '8px', fontSize: '14px', fontWeight: 'bold', width: '100%', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif', backgroundColor: 'white' };
+// 樣式常數修正：加入 boxSizing 與更精確的 padding 確保文字不貼邊
+const inputStyle: React.CSSProperties = { border: '3px solid black', borderRadius: '15px', padding: '12px 15px', fontSize: '18px', fontWeight: 'bold', width: '100%', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif' };
+const gridInput: React.CSSProperties = { border: '3px solid black', borderRadius: '12px', padding: '0 12px', fontSize: '14px', fontWeight: 'bold', width: '100%', height: '50px', display: 'flex', alignItems: 'center', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif', backgroundColor: 'white', appearance: 'none', WebkitAppearance: 'none' };
 
 export default BuyBuyBuyList;

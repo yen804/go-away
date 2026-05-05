@@ -39,6 +39,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   const [view, setView] = useState<'LIST' | 'ADD'>('LIST');
   const [items, setItems] = useState<BuyItem[]>([]);
   
+  // 狀態宣告
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState('');
   const [storeName, setStoreName] = useState('');
@@ -75,11 +76,26 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
     }
   }, [isOpen, currentTrip]);
 
+  // 修正：確保這裡使用的是 setItemName 而非 setTimeName
   const resetForm = () => {
-    setEditingId(null); setItemName(''); setQuantity(''); setStoreName(''); setLocationUrl('');
-    setPaymentMethod(''); setDate(''); setTime(''); setSelectedType('自己');
-    setBuyerName(''); setCurrency('JPY'); setPrice(''); setTaxFreeJpy(''); setImage(null);
-    setRestDays([]); setTime1({ start: '10:00', end: '20:00' }); setTime2({ start: '', end: '' }); setShowTime2(false);
+    setEditingId(null); 
+    setItemName(''); 
+    setQuantity(''); 
+    setStoreName(''); 
+    setLocationUrl('');
+    setPaymentMethod(''); 
+    setDate(''); 
+    setTime(''); 
+    setSelectedType('自己');
+    setBuyerName(''); 
+    setCurrency('JPY'); 
+    setPrice(''); 
+    setTaxFreeJpy(''); 
+    setImage(null);
+    setRestDays([]); 
+    setTime1({ start: '10:00', end: '20:00' }); 
+    setTime2({ start: '', end: '' }); 
+    setShowTime2(false);
   };
 
   const handleSave = () => {
@@ -124,12 +140,28 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   };
 
   const handleEdit = (item: BuyItem) => {
-    setEditingId(item.id); setItemName(item.itemName); setQuantity(item.quantity); setStoreName(item.storeName);
-    setLocationUrl(item.locationUrl); setPaymentMethod(item.paymentMethod); setDate(item.date); setTime(item.time);
-    setSelectedType(item.selectedType); setBuyerName(item.buyerName); setCurrency(item.currency); setPrice(item.price);
-    setTaxFreeJpy(item.taxFreeJpy); setImage(item.image); setRestDays(item.restDays || []);
+    setEditingId(item.id); 
+    setItemName(item.itemName); // 修正處
+    setQuantity(item.quantity); 
+    setStoreName(item.storeName);
+    setLocationUrl(item.locationUrl); 
+    setPaymentMethod(item.paymentMethod); 
+    setDate(item.date); 
+    setTime(item.time);
+    setSelectedType(item.selectedType); 
+    setBuyerName(item.buyerName); 
+    setCurrency(item.currency); 
+    setPrice(item.price);
+    setTaxFreeJpy(item.taxFreeJpy); 
+    setImage(item.image); 
+    setRestDays(item.restDays || []);
     setTime1({ start: item.time1_start || '10:00', end: item.time1_end || '20:00' });
-    if (item.time2_start) { setTime2({ start: item.time2_start, end: item.time2_end || '' }); setShowTime2(true); } else { setShowTime2(false); }
+    if (item.time2_start) { 
+      setTime2({ start: item.time2_start, end: item.time2_end || '' }); 
+      setShowTime2(true); 
+    } else { 
+      setShowTime2(false); 
+    }
     setView('ADD');
   };
 
@@ -227,8 +259,8 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
             </div>
           </div>
         ) : (
-          <div style={{ flex: 1, backgroundColor: 'white', borderTopLeftRadius: '40px', borderTopRightRadius: '40px', padding: '30px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ flex: 1, backgroundColor: 'white', borderTopLeftRadius: '40px', borderTopRightRadius: '40px', padding: '25px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
               <h2 style={{ ...baseStyle, fontSize: '30px', color: '#FF5A5A', fontWeight: '900', margin: 0 }}>BUY ITEM</h2>
               <X size={32} strokeWidth={3} onClick={() => { resetForm(); setView('LIST'); }} style={{ cursor: 'pointer' }} />
             </div>
@@ -239,29 +271,28 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
               <input placeholder="店家名稱" style={inputStyle} value={storeName} onChange={e => setStoreName(e.target.value)} />
               <input placeholder="地點 / 網址" style={inputStyle} value={locationUrl} onChange={e => setLocationUrl(e.target.value)} />
 
-              {/* DATE & TIME 區塊修正：統一四個欄位的大小、間距與內縮 */}
-              <div style={{ border: '3px solid black', borderRadius: '25px', padding: '15px' }}>
-                <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '10px', fontWeight: 'bold' }}>DATE & TIME</div>
+              {/* DATE & TIME 區塊修正：確保四個欄位對稱、文字內縮且樣式統一 */}
+              <div style={{ border: '3px solid black', borderRadius: '25px', padding: '12px', backgroundColor: 'white' }}>
+                <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '8px', fontWeight: 'bold' }}>DATE & TIME</div>
                 
-                {/* 第一排：預定日期 與 付款方式 */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                   {/* 預定日期 */}
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>預定日期</span>
-                      <input type="date" value={date} style={{ ...gridInput, paddingLeft: '12px', paddingRight: '12px' }} onChange={e => setDate(e.target.value)} />
+                      <input type="date" value={date} style={{ ...gridInput, padding: '0 12px' }} onChange={e => setDate(e.target.value)} />
                    </div>
+                   {/* 付款方式 */}
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>付款方式</span>
-                      <input placeholder="選擇或輸入" list="pay-hist" style={{ ...gridInput, paddingLeft: '12px', paddingRight: '12px' }} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
+                      <input placeholder="選擇或輸入" list="pay-hist" style={{ ...gridInput, padding: '0 12px' }} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
                       <datalist id="pay-hist">{historyPayments.map(p => <option key={p} value={p} />)}</datalist>
                    </div>
-                </div>
-
-                {/* 第二排：預定時間 與 商品圖片 */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                   {/* 預定時間 */}
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>預定時間</span>
-                      <input type="time" value={time} style={{ ...gridInput, paddingLeft: '12px', paddingRight: '12px' }} onChange={e => setTime(e.target.value)} />
+                      <input type="time" value={time} style={{ ...gridInput, padding: '0 12px' }} onChange={e => setTime(e.target.value)} />
                    </div>
+                   {/* 商品圖片 */}
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11px', color: '#999', fontWeight: 'bold', marginLeft: '4px' }}>商品圖片</span>
                       <div onClick={() => fileInputRef.current?.click()} style={{ ...gridInput, border: '3px dashed black', cursor: 'pointer', backgroundColor: '#F9F9F9' }}>
@@ -334,7 +365,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                 <span>NT$ {Math.round(Number(taxFreeJpy) * (exchangeRates[currency] || 0)).toLocaleString()}</span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '30px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
                 <button onClick={() => { resetForm(); setView('LIST'); }} style={{ padding: '15px', backgroundColor: 'white', border: '4px solid black', color: 'black', borderRadius: '20px', fontWeight: '900', fontSize: '22px', ...baseStyle }}>取消</button>
                 <button onClick={handleSave} style={{ padding: '15px', backgroundColor: 'black', color: 'white', border: '4px solid black', borderRadius: '20px', fontWeight: '900', fontSize: '22px', ...baseStyle }}>儲存</button>
               </div>
@@ -346,6 +377,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   );
 };
 
+// 樣式常數
 const inputStyle: React.CSSProperties = { border: '3px solid black', borderRadius: '15px', padding: '12px', fontSize: '18px', fontWeight: 'bold', width: '100%', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif' };
 const gridInput: React.CSSProperties = { border: '3px solid black', borderRadius: '12px', padding: '8px', fontSize: '14px', fontWeight: 'bold', width: '100%', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif', backgroundColor: 'white' };
 

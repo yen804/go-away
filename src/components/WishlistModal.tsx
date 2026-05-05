@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, ChevronLeft, MapPin, Clock, Calendar, Pencil, Trash2, ShoppingCart, CheckCircle2, Utensils, ShoppingBag, Globe } from 'lucide-react';
 
-// 幣種定義（已增加對應符號）
+// 幣種定義：已在名稱後方增加對應幣別符號
 const currencyNames: { [key: string]: string } = {
   JPY: '日圓 ¥', KRW: '韓幣 ₩', USD: '美金 $', GBP: '英鎊 £', AUD: '澳幣 $',
   HKD: '港幣 $', VND: '越南幣 ₫', PHP: '披索 ₱', IDR: '印尼盾 Rp', CNY: '人民幣 ¥', SGD: '新幣 $', TWD: '台幣 $'
@@ -77,7 +77,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
   const [location, setLocation] = useState('');
   const [link, setLink] = useState('');
   const [price, setPrice] = useState('');
-  const [currency, setCurrency] = useState('JPY - 日圓 ¥'); // 初始值同步增加符號
+  const [currency, setCurrency] = useState('JPY - 日圓 ¥');
   const [taxFreePrice, setTaxFreePrice] = useState('');
   const [category, setCategory] = useState<'EAT' | 'BUY'>('BUY');
   const [image, setImage] = useState<string | null>(null);
@@ -220,8 +220,8 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: '18px', fontWeight: '900', ...globalStyle }}>
                   數量 : {item.quantity}
-                  {/* 此處直接顯示包含符號的幣種名稱與金額 */}
-                  <span style={{ marginLeft: '20px' }}>{item.currency.split(' ').slice(1).join(' ')} {item.price}</span>
+                  {/* 此處 item.currency 會帶入包含符號的文字 (例如 "TWD - 台幣 $")，透過 split 切割只取符號部分或全顯示 */}
+                  <span style={{ marginLeft: '20px' }}>{item.currency.split(' ').pop()} {item.price}</span>
                 </div>
                 <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#666', ...globalStyle }}>
                   {item.category === 'EAT' ? '美食清單' : '購物清單'}

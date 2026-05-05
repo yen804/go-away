@@ -60,7 +60,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   const [time2, setTime2] = useState({ start: '', end: '' });
   const [showTime2, setShowTime2] = useState(false);
   
-  // 新增：圖片預覽狀態
+  // 圖片預覽狀態
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -104,11 +104,11 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
     if (!itemName) return;
     const allItems = JSON.parse(localStorage.getItem('buy_buy_buy_v10') || '[]');
     
-    // 修正：確保所有欄位都有預設值，避免資料結構毀損
+    // 修正：補齊物件結構，確保第一次填寫且帶有圖片時能完整儲存
     const newItem: BuyItem = {
       id: editingId || Date.now(),
       trip: currentTrip,
-      itemName: itemName || '',
+      itemName: itemName.trim(),
       quantity: quantity || '1',
       storeName: storeName || '',
       locationUrl: locationUrl || '',
@@ -120,12 +120,13 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
       currency: currency || 'JPY',
       price: price || '0',
       taxFreeJpy: taxFreeJpy || '0',
-      image: image || null,
+      image: image, // 確保圖片 Base64 正常存入
       completed: editingId ? (items.find(i => i.id === editingId)?.completed || false) : false,
       restDays: restDays || [],
       time1_start: time1.start || '10:00',
       time1_end: time1.end || '20:00',
-      ...(showTime2 && time2.start && { time2_start: time2.start, time2_end: time2.end || '20:00' }),
+      time2_start: showTime2 ? time2.start : undefined,
+      time2_end: showTime2 ? time2.end : undefined,
     };
 
     const updatedAll = editingId 
@@ -229,7 +230,6 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                         </div>
                       </div>
 
-                      {/* 修正：點擊圖片放大 */}
                       <div 
                         onClick={() => item.image && setPreviewImage(item.image)}
                         style={{ width: '85px', height: '85px', borderRadius: '15px', border: '3px solid black', overflow: 'hidden', backgroundColor: '#EEE', flexShrink: 0, cursor: item.image ? 'zoom-in' : 'default' }}
@@ -302,7 +302,6 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
               <input placeholder="店家名稱" style={inputStyle} value={storeName} onChange={e => setStoreName(e.target.value)} />
               <input placeholder="地點 / 網址" style={inputStyle} value={locationUrl} onChange={e => setLocationUrl(e.target.value)} />
 
-              {/* DATE & TIME 區塊 */}
               <div style={{ border: '3px solid black', borderRadius: '25px', padding: '15px', backgroundColor: 'white' }}>
                 <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>DATE & TIME</div>
                 

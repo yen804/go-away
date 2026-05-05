@@ -45,7 +45,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   const [locationUrl, setLocationUrl] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [date, setDate] = useState('');
-  const [time, setTime] = useState(''); // 確保這裡定義的是 setTime
+  const [time, setTime] = useState(''); 
   const [selectedType, setSelectedType] = useState('自己');
   const [buyerName, setBuyerName] = useState('');
   const [currency, setCurrency] = useState('JPY');
@@ -157,44 +157,42 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                       {item.itemName}
                     </div>
 
+                    {/* 上排：圖示、店家資訊、圖片 */}
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
-                      
                       <div onClick={() => toggleComplete(item.id)} style={{ width: '40px', height: '45px', borderRadius: '12px', border: '3px solid black', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: item.completed ? '#666' : '#F8F9FA', flexShrink: 0, marginTop: '2px' }}>
                         {item.completed ? <CheckCircle2 color="white" size={20} /> : (item.selectedType === '代購' ? <ShoppingBag color="#3B82F6" size={20} /> : item.selectedType === '伴手禮' ? <Gift color="#FF5A5A" size={20} /> : <User color="black" size={20} />)}
                       </div>
 
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '18px', fontWeight: 'bold', color: item.completed ? '#555' : 'black', marginBottom: '4px' }}>{item.storeName}</div>
-                        
                         <div onClick={(e) => openLink(e, item.locationUrl || item.storeName)} style={{ display: 'flex', alignItems: 'flex-start', gap: '4px', fontSize: '15px', color: item.completed ? '#666' : '#007AFF', cursor: 'pointer', textAlign: 'left', marginBottom: '12px', textDecoration: 'underline' }}>
                           <MapPin size={16} style={{flexShrink: 0}} /> 
                           <span style={{display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{item.locationUrl || '點擊開啟地址'}</span>
                         </div>
+                      </div>
 
-                        {/* 營業時段修正：已對齊 wishlist 格式，無重疊 */}
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '5px' }}>
-                          <span style={{ fontSize: '15px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', whiteSpace: 'nowrap', ...baseStyle }}>營業時段：</span>
-                          <div style={{ fontSize: '16px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', display: 'flex', flexDirection: 'column', gap: '2px', ...baseStyle }}>
-                            <div>{item.time1_start} - {item.time1_end}</div>
-                            {item.time2_start && <div>{item.time2_start} - {item.time2_end}</div>}
-                          </div>
+                      <div style={{ width: '85px', height: '85px', borderRadius: '15px', border: '3px solid black', overflow: 'hidden', backgroundColor: '#EEE', flexShrink: 0 }}>
+                        {item.image ? <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                      </div>
+                    </div>
+
+                    {/* 下排：營業時段與狀態資訊 (精準對齊分類圖示下方) */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '10px' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                        <span style={{ fontSize: '15px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', whiteSpace: 'nowrap', ...baseStyle }}>營業時段：</span>
+                        <div style={{ fontSize: '16px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', display: 'flex', flexDirection: 'column', gap: '2px', ...baseStyle }}>
+                          <div>{item.time1_start} - {item.time1_end}</div>
+                          {item.time2_start && <div>{item.time2_start} - {item.time2_end}</div>}
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', flexShrink: 0 }}>
-                        <div style={{ position: 'relative' }}>
-                          <div style={{ width: '85px', height: '85px', borderRadius: '15px', border: '3px solid black', overflow: 'hidden', backgroundColor: '#EEE' }}>
-                            {item.image ? <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '85px' }}>
-                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', fontWeight: 'bold', color: '#666', whiteSpace: 'nowrap', ...baseStyle }}>
-                             <Clock size={14}/> 打烊: {item.time2_end || item.time1_end}
-                           </div>
-                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', fontWeight: 'bold', color: '#666', whiteSpace: 'nowrap', ...baseStyle }}>
-                             <Calendar size={14}/> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '無'}
-                           </div>
-                        </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '85px', flexShrink: 0 }}>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', fontWeight: 'bold', color: '#666', whiteSpace: 'nowrap', ...baseStyle }}>
+                           <Clock size={14}/> 打烊: {item.time2_end || item.time1_end}
+                         </div>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', fontWeight: 'bold', color: '#666', whiteSpace: 'nowrap', ...baseStyle }}>
+                           <Calendar size={14}/> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '無'}
+                         </div>
                       </div>
                     </div>
 
@@ -249,7 +247,6 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                   <input type="date" value={date} style={gridInput} onChange={e => setDate(e.target.value)} />
                   <input placeholder="付款方式" list="pay-hist" style={gridInput} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
                   <datalist id="pay-hist">{historyPayments.map(p => <option key={p} value={p} />)}</datalist>
-                  {/* 修正點：這裡是 setTime 而非 setTimeName */}
                   <input type="time" value={time} style={gridInput} onChange={e => setTime(e.target.value)} />
                   <div onClick={() => fileInputRef.current?.click()} style={{ ...gridInput, border: '3px dashed black', cursor: 'pointer', height: '40px' }}>
                     <Camera size={18} /> <span>{image ? '已選取' : '上傳圖片'}</span>

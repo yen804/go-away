@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Camera, ChevronLeft, MapPin, User, ShoppingBag, Gift, ShoppingCart, Trash2, Edit2, Clock, Calendar } from 'lucide-react';
+import { X, Camera, ChevronLeft, MapPin, User, ShoppingBag, Gift, ShoppingCart, Trash2, Edit2, Clock, Calendar, CheckCircle2 } from 'lucide-react';
 
 const exchangeRates: { [key: string]: number } = {
   JPY: 0.21, KRW: 0.024, USD: 32.5, GBP: 41.2, AUD: 21.5,
@@ -150,60 +150,70 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '10px 15px' }}>
               {items.map(item => (
-                <div key={item.id} style={{ position: 'relative', marginBottom: '20px' }}>
-                  <div style={{ backgroundColor: item.completed ? COMPLETED_GRAY : 'white', border: '4px solid black', borderRadius: '40px', padding: '15px 20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                      <div onClick={() => toggleComplete(item.id)} style={{ width: '60px', height: '60px', borderRadius: '15px', border: '3px solid black', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: item.completed ? '#666' : 'white', flexShrink: 0 }}>
-                        {item.selectedType === '代購' ? <ShoppingBag color={item.completed ? 'white' : 'black'} /> : item.selectedType === '伴手禮' ? <Gift color={item.completed ? 'white' : 'black'} /> : <User color={item.completed ? 'white' : 'black'} />}
+                <div key={item.id} style={{ position: 'relative', marginBottom: '25px' }}>
+                  <div style={{ backgroundColor: item.completed ? COMPLETED_GRAY : 'white', border: '4px solid black', borderRadius: '40px', padding: '20px' }}>
+                    
+                    {/* 商品名稱：置頂並左對齊 */}
+                    <div style={{ fontSize: '24px', fontWeight: '900', marginBottom: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: item.completed ? '#444' : 'black', ...baseStyle }}>
+                      {item.itemName}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
+                      
+                      {/* 分類圖示：下移並縮小尺寸 */}
+                      <div onClick={() => toggleComplete(item.id)} style={{ width: '40px', height: '45px', borderRadius: '12px', border: '3px solid black', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: item.completed ? '#666' : '#F8F9FA', flexShrink: 0, marginTop: '2px' }}>
+                        {item.completed ? <CheckCircle2 color="white" size={20} /> : (item.selectedType === '代購' ? <ShoppingBag color="#3B82F6" size={20} /> : item.selectedType === '伴手禮' ? <Gift color="#FF5A5A" size={20} /> : <User color="black" size={20} />)}
                       </div>
+
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '22px', fontWeight: '900', ...baseStyle, color: item.completed ? '#444' : 'black', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.itemName}</div>
-                        <div style={{ fontSize: '16px', fontWeight: 'bold', color: item.completed ? '#555' : 'black' }}>{item.storeName}</div>
+                        {/* 店家名稱：與縮小後的圖示同高 */}
+                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: item.completed ? '#555' : 'black', marginBottom: '4px' }}>{item.storeName}</div>
                         
-                        <div onClick={(e) => openLink(e, item.locationUrl || item.storeName)} style={{ display: 'flex', alignItems: 'flex-start', gap: '4px', fontSize: '11px', color: item.completed ? '#666' : '#007AFF', cursor: 'pointer', textAlign: 'left', marginBottom: '4px', textDecoration: 'underline' }}>
-                          <MapPin size={12} style={{flexShrink: 0}} /> 
-                          <span style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{item.locationUrl || '點擊開啟地址'}</span>
+                        <div onClick={(e) => openLink(e, item.locationUrl || item.storeName)} style={{ display: 'flex', alignItems: 'flex-start', gap: '4px', fontSize: '15px', color: item.completed ? '#666' : '#007AFF', cursor: 'pointer', textAlign: 'left', marginBottom: '12px', textDecoration: 'underline' }}>
+                          <MapPin size={16} style={{flexShrink: 0}} /> 
+                          <span style={{display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{item.locationUrl || '點擊開啟地址'}</span>
                         </div>
 
-                        {/* 修正：對齊左側按鈕邊緣，並與地圖連結保持 8px 間距 */}
-                        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', marginLeft: '-72px', paddingLeft: '72px', marginTop: '8px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', whiteSpace: 'nowrap' }}>營業時段：</span>
-                          <div style={{ fontSize: '14px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        {/* 營業時段：修正間距以對齊 */}
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginLeft: '-55px', marginTop: '5px' }}>
+                          <span style={{ fontSize: '15px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', whiteSpace: 'nowrap', ...baseStyle }}>營業時段：</span>
+                          <div style={{ fontSize: '16px', fontWeight: 'bold', color: item.completed ? '#666' : '#444', display: 'flex', flexDirection: 'column', gap: '2px', ...baseStyle }}>
                             <div>{item.time1_start} - {item.time1_end}</div>
                             {item.time2_start && <div>{item.time2_start} - {item.time2_end}</div>}
                           </div>
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', flexShrink: 0 }}>
                         <div style={{ position: 'relative' }}>
-                          {item.image ? (
-                            <img src={item.image} style={{ width: '85px', height: '85px', borderRadius: '20px', border: '3px solid black', objectFit: 'cover' }} />
-                          ) : (
-                            <div style={{ width: '85px', height: '85px', borderRadius: '20px', border: '3px solid black', backgroundColor: '#EEE' }} />
-                          )}
+                          <div onClick={() => {}} style={{ width: '85px', height: '85px', borderRadius: '15px', border: '3px solid black', overflow: 'hidden', backgroundColor: '#EEE' }}>
+                            {item.image ? <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 'bold', color: '#444' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '85px' }}>
+                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', fontWeight: 'bold', color: '#666', whiteSpace: 'nowrap', ...baseStyle }}>
                              <Clock size={14}/> 打烊: {item.time2_end || item.time1_end}
                            </div>
-                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 'bold', color: '#444' }}>
-                             <Calendar size={14}/> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '－'}
+                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', fontWeight: 'bold', color: '#666', whiteSpace: 'nowrap', ...baseStyle }}>
+                             <Calendar size={14}/> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '無'}
                            </div>
                         </div>
                       </div>
                     </div>
-                    <div style={{ borderTop: '2px dashed #CCC', margin: '5px 0' }} />
+
+                    <div style={{ borderTop: '3px dashed #DDD', margin: '15px 0' }} />
+
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '900', ...baseStyle }}>
-                      <div style={{ fontSize: '20px' }}>數量 : {item.quantity}</div>
+                      <div style={{ fontSize: '18px' }}>數量 : {item.quantity}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <span style={{ fontSize: '18px' }}>{item.currency} {Number(item.price).toLocaleString()}</span>
-                        <span style={{ border: '3px solid black', padding: '2px 15px', borderRadius: '20px', backgroundColor: 'white', fontSize: '16px' }}>{item.buyerName}</span>
+                        <span style={{ border: '3px solid black', padding: '2px 15px', borderRadius: '20px', backgroundColor: 'white', fontSize: '15px' }}>{item.buyerName}</span>
                       </div>
                     </div>
                   </div>
-                  <div style={{ position: 'absolute', right: '-12px', top: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <button onClick={() => handleEdit(item)} style={{ background: 'white', border: '2px solid black', borderRadius: '10px', padding: '5px', boxShadow: '2px 2px 0px black' }}><Edit2 size={16}/></button>
+
+                  <div style={{ position: 'absolute', right: '-12px', top: '15px', display: 'flex', flexDirection: 'column', gap: '10px', zIndex: 10 }}>
+                    <button onClick={() => handleEdit(item)} style={{ background: 'white', border: '2px solid black', borderRadius: '10px', padding: '6px', boxShadow: '2px 2px 0px black' }}><Edit2 size={18}/></button>
                     <button onClick={() => { 
                       if(window.confirm('確定刪除？')) { 
                         const allItems = JSON.parse(localStorage.getItem('buy_buy_buy_v10') || '[]');
@@ -211,26 +221,26 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                         localStorage.setItem('buy_buy_buy_v10', JSON.stringify(updatedAll));
                         setItems(updatedAll.filter((i: any) => i.trip === currentTrip));
                       } 
-                    }} style={{ background: 'white', border: '2px solid black', borderRadius: '10px', padding: '5px', color: 'red', boxShadow: '2px 2px 0px black' }}><Trash2 size={16}/></button>
+                    }} style={{ background: 'white', border: '2px solid black', borderRadius: '10px', padding: '6px', color: 'red', boxShadow: '2px 2px 0px black' }}><Trash2 size={18}/></button>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div style={{ padding: '20px 25px 30px' }}>
-              <button onClick={() => { resetForm(); setView('ADD'); }} style={{ width: '100%', backgroundColor: 'white', border: '5px solid black', borderRadius: '35px', padding: '15px', fontSize: '26px', fontWeight: '900', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', boxShadow: '0px 8px 0px black', ...baseStyle }}>
-                <ShoppingCart size={32} color="red" strokeWidth={3} /> 新增項目
+            <div style={{ padding: '25px' }}>
+              <button onClick={() => { resetForm(); setView('ADD'); }} style={{ width: '100%', backgroundColor: 'white', border: '5px solid black', borderRadius: '35px', padding: '18px', fontSize: '26px', fontWeight: '900', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0px 8px 0px black', ...baseStyle }}>
+                <ShoppingCart size={28} color="#FF5A5A" strokeWidth={3} fill="#FF5A5A" /> 新增項目
               </button>
             </div>
           </div>
         ) : (
-          <div style={{ flex: 1, backgroundColor: 'white', borderTopLeftRadius: '40px', borderTopRightRadius: '40px', padding: '20px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-              <h2 style={{ ...baseStyle, fontSize: '32px', color: '#E57373', fontStyle: 'italic', fontWeight: '900', margin: 0 }}>BUY ITEM</h2>
-              <X size={35} strokeWidth={4} onClick={() => { resetForm(); setView('LIST'); }} style={{ cursor: 'pointer' }} />
+          <div style={{ flex: 1, backgroundColor: 'white', borderTopLeftRadius: '40px', borderTopRightRadius: '40px', padding: '30px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ ...baseStyle, fontSize: '30px', color: '#FF5A5A', fontWeight: '900', margin: 0 }}>BUY ITEM</h2>
+              <X size={32} strokeWidth={3} onClick={() => { resetForm(); setView('LIST'); }} style={{ cursor: 'pointer' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <input placeholder="商品名稱" style={inputStyle} value={itemName} onChange={e => setItemName(e.target.value)} />
               <input placeholder="數量" style={inputStyle} value={quantity} onChange={e => setQuantity(e.target.value)} />
               <input placeholder="店家名稱" style={inputStyle} value={storeName} onChange={e => setStoreName(e.target.value)} />
@@ -238,7 +248,6 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
 
               <div style={{ border: '3px solid black', borderRadius: '25px', padding: '15px' }}>
                 <div style={{ ...baseStyle, fontSize: '12px', color: '#E57373', marginBottom: '8px', fontWeight: 'bold' }}>DATE & TIME</div>
-                {/* 修正：統一為 1fr 1fr 網格，欄位大小一致且保持 12px 間距 */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <input type="date" value={date} style={gridInput} onChange={e => setDate(e.target.value)} />
                   <input placeholder="付款方式" list="pay-hist" style={gridInput} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} />
@@ -313,9 +322,9 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
                 <span>NT$ {Math.round(Number(taxFreeJpy) * (exchangeRates[currency] || 0)).toLocaleString()}</span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '5px' }}>
-                <button onClick={() => { resetForm(); setView('LIST'); }} style={{ padding: '15px', backgroundColor: 'black', color: 'white', borderRadius: '20px', fontWeight: '900', fontSize: '22px', ...baseStyle }}>取消</button>
-                <button onClick={handleSave} style={{ padding: '15px', backgroundColor: 'black', color: 'white', borderRadius: '20px', fontWeight: '900', fontSize: '22px', ...baseStyle }}>儲存</button>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '30px' }}>
+                <button onClick={() => { resetForm(); setView('LIST'); }} style={{ padding: '15px', backgroundColor: 'white', border: '4px solid black', color: 'black', borderRadius: '20px', fontWeight: '900', fontSize: '22px', ...baseStyle }}>取消</button>
+                <button onClick={handleSave} style={{ padding: '15px', backgroundColor: 'black', color: 'white', border: '4px solid black', borderRadius: '20px', fontWeight: '900', fontSize: '22px', ...baseStyle }}>儲存</button>
               </div>
             </div>
           </div>
@@ -325,7 +334,7 @@ const BuyBuyBuyList: React.FC<{ isOpen: boolean; onClose: () => void; currentTri
   );
 };
 
-const inputStyle: React.CSSProperties = { border: '3px solid black', borderRadius: '15px', padding: '8px 12px', fontSize: '16px', fontWeight: 'bold', width: '100%', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif' };
+const inputStyle: React.CSSProperties = { border: '3px solid black', borderRadius: '15px', padding: '12px', fontSize: '18px', fontWeight: 'bold', width: '100%', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif' };
 const gridInput: React.CSSProperties = { border: '3px solid black', borderRadius: '12px', padding: '6px', fontSize: '14px', fontWeight: 'bold', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', boxSizing: 'border-box', fontFamily: 'MORITAD, sans-serif', backgroundColor: 'white' };
 
 export default BuyBuyBuyList;

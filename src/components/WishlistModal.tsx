@@ -186,7 +186,7 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
                     </span>
                   </div>
                   
-                  {/* 左側：營業時段 (對齊分類圖示左側) */}
+                  {/* 左側：營業時段 */}
                   <div style={{ marginLeft: '-70px', marginTop: '5px' }}>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                       <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#444', whiteSpace: 'nowrap', ...globalStyle }}>營業時段：</span>
@@ -198,21 +198,20 @@ const WishListModal = ({ currentTrip, onClose }: Props) => {
                   </div>
                 </div>
 
-                {/* 右側：打烊/休息 與 圖片 */}
+                {/* 右側：圖片 + 下方打烊/休息 (並列於營業時段右側) */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start', flexShrink: 0 }}>
-                  {/* 打烊與休息：與左側營業時段同高度並列，且對齊圖片左側 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '5px' }}>
+                  <div onClick={() => item.image && setPreviewImage(item.image)} style={{ width: '85px', height: '85px', border: '3px solid black', borderRadius: '15px', overflow: 'hidden', cursor: item.image ? 'zoom-in' : 'default', backgroundColor: '#EEE' }}>
+                    {item.image ? <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="wish" /> : null}
+                  </div>
+
+                  {/* 精準對齊圖片左側並列為兩列 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '85px' }}>
                     <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#666', display: 'flex', alignItems: 'center', gap: '4px', ...globalStyle }}>
                       <Clock size={14} /> 打烊: {item.time2_end || item.time1_end}
                     </div>
                     <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#666', display: 'flex', alignItems: 'center', gap: '4px', ...globalStyle }}>
                       <Calendar size={14} /> 休息: {item.restDays?.length > 0 ? item.restDays.join(',') : '無'}
                     </div>
-                  </div>
-
-                  {/* 圖片展示 */}
-                  <div onClick={() => item.image && setPreviewImage(item.image)} style={{ width: '85px', height: '85px', border: '3px solid black', borderRadius: '15px', overflow: 'hidden', cursor: item.image ? 'zoom-in' : 'default', backgroundColor: '#EEE' }}>
-                    {item.image ? <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="wish" /> : null}
                   </div>
                 </div>
               </div>

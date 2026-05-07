@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Map, Heart, Luggage, ShoppingBag, Calculator as CalcIcon, ArrowRight, Wrench } from 'lucide-react';
-// 引入 Supabase
 import { createClient } from '@supabase/supabase-js';
 
 // 引入子組件
@@ -11,11 +10,19 @@ import DestinationModal from './components/DestinationModal';
 import BuyBuyBuyModal from './components/BuyBuyBuyModal';
 import ToolModal from './components/ToolModal';
 
-// 初始化 Supabase 連線
+// 初始化 Supabase
 const supabase = createClient(
   'https://zjcdhfafehcbbiljevoi.supabase.co', 
   'sb_publishable_8f530wHsNhiv4O7JZ--O7Q_IolVAPyF'
 );
+
+// 辨識使用者設備
+const getDeviceLabel = () => {
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/i.test(ua)) return "家人iPhone";
+  if (/Android/i.test(ua)) return "家人Android";
+  return "主控電腦";
+};
 
 export default function App() {
   // --- 狀態管理 ---
@@ -34,71 +41,91 @@ export default function App() {
 
   const fontStyle = { fontFamily: 'MORITAD, sans-serif' };
 
-  // --- 核心邏輯：本地與雲端同步 ---
-  useEffect(() => {
-    localStorage.setItem('travel_trips', JSON.stringify(trips));
-    localStorage.setItem('current_trip', currentTrip);
-    
-    // 同步到雲端
-    syncToCloud(currentTrip);
-    updateAllStats();
-  }, [trips, currentTrip, activeModal]);
-
-  // 新增：寫入雲端功能
-  const syncToCloud = async (tripName: string) => {
+  // --- 雲端同步邏輯 ---
+  
+  // 1. 從雲端抓取最新狀態
+  const fetchLatestStatus = async () => {
     try {
-      await supabase
+      const { data, error: _error } = await supabase
         .from('Go_Away')
-        .insert([{ name: `切換旅程：${tripName}`, category: '系統連線', is_checked: false }]);
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (data && data.length > 0) {
+        const lastAction = data[0];
+        // 如果雲端旅程跟本地不同，則更新
+        if (lastAction.category === '旅程切換' && lastAction.name !== currentTrip) {
+          console.log(`同步更新：來自 ${lastAction.device || '雲端'}`);
+          setCurrentTrip(lastAction.name);
+          localStorage.setItem('current_trip', lastAction.name);
+        }
+      }
     } catch (e) {
-      console.error("雲端連線異常", e);
+      console.error("抓取雲端失敗", e);
     }
   };
+
+  // 2. 寫入雲端
+  const syncToCloud = async (tripName: string) => {
+    await supabase.from('Go_Away').insert([{ 
+      name: tripName, 
+      category: '旅程切換', 
+      device: getDeviceLabel()
+    }]);
+  };
+
+  // 3. 設定定時同步 (每10秒)
+  useEffect(() => {
+    fetchLatestStatus();
+    const interval = setInterval(fetchLatestStatus, 10000);
+    return () => clearInterval(interval);
+  }, [currentTrip]);
+
+  // 4. 當手動切換旅程時
+  const handleTripChange = (dest: string) => {
+    setCurrentTrip(dest);
+    localStorage.setItem('current_trip', dest);
+    syncToCloud(dest);
+    setActiveModal(null);
+  };
+
+  // --- 數據更新邏輯 ---
+  useEffect(() => {
+    localStorage.setItem('travel_trips', JSON.stringify(trips));
+    updateAllStats();
+  }, [trips, currentTrip, activeModal]);
 
   const updateAllStats = () => {
     try {
       const wishRaw = localStorage.getItem('travel_buys');
       const wishAll = wishRaw ? JSON.parse(wishRaw) : [];
       if (Array.isArray(wishAll)) {
-        const currentWishItems = wishAll.filter((i: any) => i.trip === currentTrip);
-        const doneCount = currentWishItems.filter((i: any) => i.completed === true).length;
-        setWishStats({ total: currentWishItems.length, todo: currentWishItems.length - doneCount });
+        const currentItems = wishAll.filter((i: any) => i.trip === currentTrip);
+        const done = currentItems.filter((i: any) => i.completed).length;
+        setWishStats({ total: currentItems.length, todo: currentItems.length - done });
       }
 
       const buyRaw = localStorage.getItem('buy_buy_buy_v10');
       const buyAll = buyRaw ? JSON.parse(buyRaw) : [];
       if (Array.isArray(buyAll)) {
-        const currentBuyItems = buyAll.filter((i: any) => i.trip === currentTrip);
-        const doneCount = currentBuyItems.filter((i: any) => i.completed === true).length;
-        setBuyStats({ total: currentBuyItems.length, todo: currentBuyItems.length - doneCount });
+        const currentItems = buyAll.filter((i: any) => i.trip === currentTrip);
+        const done = currentItems.filter((i: any) => i.completed).length;
+        setBuyStats({ total: currentItems.length, todo: currentItems.length - done });
       }
 
       const packingRaw = localStorage.getItem(`packing_${currentTrip}`);
       const packingData = packingRaw ? JSON.parse(packingRaw) : [];
       if (Array.isArray(packingData)) {
-        const packed = packingData.filter((i: any) => i.packed === true).length;
+        const packed = packingData.filter((i: any) => i.packed).length;
         setPackingProgress(packingData.length > 0 ? Math.round((packed / packingData.length) * 100) : 0);
       }
-    } catch (e) {
-      console.error("同步數據失敗:", e);
-    }
-  };
-
-  const handleDeleteTrip = (tripToDelete: string) => {
-    const updatedTrips = trips.filter(t => t !== tripToDelete);
-    setTrips(updatedTrips);
-    if (currentTrip === tripToDelete) {
-      setCurrentTrip(updatedTrips[0] || 'KYUSHU');
-    }
+    } catch (e) { console.error("數據同步失敗", e); }
   };
 
   // --- 樣式設定 ---
   const cardBase: React.CSSProperties = {
-    backgroundColor: 'white',
-    border: '4px solid black',
-    boxShadow: '8px 8px 0px black',
-    cursor: 'pointer',
-    ...fontStyle
+    backgroundColor: 'white', border: '4px solid black', boxShadow: '8px 8px 0px black', cursor: 'pointer', ...fontStyle
   };
 
   const StatBadge = ({ todo, total }: { todo: number, total: number }) => (
@@ -111,6 +138,7 @@ export default function App() {
     <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', ...fontStyle }}>
       <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
+        {/* 標題區 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ textAlign: 'left' }}>
             <div style={{ display: 'inline-block', transform: 'rotate(-6deg)', transformOrigin: 'left bottom' }}>
@@ -121,10 +149,7 @@ export default function App() {
             <h1 style={{ fontSize: '64px', marginTop: '8px', marginBottom: '20px', lineHeight: 1, color: 'black', transform: 'rotate(-2deg)' }}>
               哈囉<br /><span style={{ display: 'block', marginTop: '15px' }}>{currentTrip}!</span>
             </h1>
-            <button 
-              onClick={() => setActiveModal('destination')} 
-              style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px', fontWeight: 'bold', border: '5px solid black' }}
-            >
+            <button onClick={() => setActiveModal('destination')} style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px', fontWeight: 'bold', border: '5px solid black' }}>
               <div style={{ width: '14px', height: '14px', backgroundColor: '#3B82F6', borderRadius: '50%' }}></div>
               切換旅程
             </button>
@@ -134,12 +159,10 @@ export default function App() {
           </div>
         </div>
 
-        {/* 核心功能按鈕區 */}
+        {/* 主功能區 */}
         <div style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ backgroundColor: 'black', padding: '12px', borderRadius: '50%', display: 'flex' }}>
-              <Map color="white" size={32} />
-            </div>
+            <div style={{ backgroundColor: 'black', padding: '12px', borderRadius: '50%', display: 'flex' }}><Map color="white" size={32} /></div>
             <span style={{ fontSize: '32px', fontWeight: 'bold' }}>看行程</span>
           </div>
           <ArrowRight size={40} strokeWidth={4} />
@@ -174,16 +197,9 @@ export default function App() {
         </div>
       </div>
 
-      {/* 彈窗組件區 */}
+      {/* 彈窗 */}
       {activeModal === 'destination' && (
-        <DestinationModal 
-          trips={trips} 
-          currentTrip={currentTrip} 
-          onSelect={(dest) => { setCurrentTrip(dest); setActiveModal(null); }} 
-          onAdd={(newDest) => setTrips([...trips, newDest])} 
-          onDelete={handleDeleteTrip} 
-          onClose={() => setActiveModal(null)} 
-        />
+        <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={handleTripChange} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />
       )}
       {activeModal === 'calc' && <Calculator onClose={() => setActiveModal(null)} />}
       {activeModal === 'wish' && <WishlistModal currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}

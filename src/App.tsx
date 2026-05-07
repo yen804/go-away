@@ -46,23 +46,28 @@ export default function App() {
   // 1. 從雲端抓取最新狀態 (接收端)
   const fetchLatestStatus = async () => {
     try {
-      const { data, error: _error } = await supabase
+      const { data, error } = await supabase
         .from('Go_Away')
-        .select('*')
+        .select('name, device')
         .order('created_at', { ascending: false })
         .limit(1);
 
+      if (error) {
+        console.error("讀取雲端失敗 (400 可能是因為資料表為空):", error.message);
+        return;
+      }
+
       if (data && data.length > 0) {
         const lastAction = data[0];
-        // 寬鬆判斷：只要名稱跟現在本地不同，就同步（解決分類名稱不一致問題）
+        // 寬鬆判斷：只要名稱不同就更新，並記錄是誰改的
         if (lastAction.name !== currentTrip) {
-          console.log(`同步更新：偵測到雲端變更為 ${lastAction.name}`);
+          console.log(`同步：由 ${lastAction.device || '雲端'} 更新為 ${lastAction.name}`);
           setCurrentTrip(lastAction.name);
           localStorage.setItem('current_trip', lastAction.name);
         }
       }
     } catch (e) {
-      console.error("抓取雲端失敗", e);
+      console.error("同步連線異常", e);
     }
   };
 
@@ -70,32 +75,40 @@ export default function App() {
   const syncToCloud = async (tripName: string) => {
     try {
       const label = getDeviceLabel();
-      await supabase.from('Go_Away').insert([{ 
-        name: tripName, 
-        category: '旅程切換', 
-        device: label 
-      }]);
+      const { error } = await supabase.from('Go_Away').insert([
+        { 
+          name: tripName, 
+          category: '旅程切換', 
+          device: label // 確保與資料庫小寫 device 欄位一致
+        }
+      ]);
+
+      if (error) {
+        console.error("寫入雲端失敗 (請檢查 SQL 欄位是否建立):", error.message);
+      } else {
+        console.log("成功同步至雲端:", tripName);
+      }
     } catch (e) {
-      console.error("寫入雲端失敗", e);
+      console.error("寫入函式異常", e);
     }
   };
 
-  // 3. 設定定時同步 (每 10 秒自動檢查一次)
+  // 3. 設定定時同步 (每 10 秒)
   useEffect(() => {
     fetchLatestStatus();
     const interval = setInterval(fetchLatestStatus, 10000);
     return () => clearInterval(interval);
   }, [currentTrip]);
 
-  // 4. 當使用者手動點擊「切換旅程」時
+  // 4. 當手動切換旅程時
   const handleTripChange = (dest: string) => {
     setCurrentTrip(dest);
     localStorage.setItem('current_trip', dest);
-    syncToCloud(dest); // 觸發寫入雲端
+    syncToCloud(dest); 
     setActiveModal(null);
   };
 
-  // --- 數據更新邏輯 (維持原始結構) ---
+  // --- 數據統計邏輯 (維持原始結構) ---
   useEffect(() => {
     localStorage.setItem('travel_trips', JSON.stringify(trips));
     updateAllStats();
@@ -125,10 +138,10 @@ export default function App() {
         const packed = packingData.filter((i: any) => i.packed).length;
         setPackingProgress(packingData.length > 0 ? Math.round((packed / packingData.length) * 100) : 0);
       }
-    } catch (e) { console.error("數據更新失敗", e); }
+    } catch (e) { console.error("數據統計異常", e); }
   };
 
-  // --- UI 樣式設定 (維持原始設計) ---
+  // --- UI 樣式 (維持原始設計) ---
   const cardBase: React.CSSProperties = {
     backgroundColor: 'white', border: '4px solid black', boxShadow: '8px 8px 0px black', cursor: 'pointer', ...fontStyle
   };
@@ -143,7 +156,6 @@ export default function App() {
     <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', ...fontStyle }}>
       <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
-        {/* 標題與切換旅程 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ textAlign: 'left' }}>
             <div style={{ display: 'inline-block', transform: 'rotate(-6deg)', transformOrigin: 'left bottom' }}>
@@ -164,7 +176,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* 主功能清單 */}
         <div style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div style={{ backgroundColor: 'black', padding: '12px', borderRadius: '50%', display: 'flex' }}><Map color="white" size={32} /></div>
@@ -202,7 +213,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* 彈窗渲染 */}
+      {/* 彈窗部分 */}
       {activeModal === 'destination' && (
         <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={handleTripChange} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />
       )}

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Map, Heart, Luggage, ShoppingBag, Calculator as CalcIcon, ArrowRight, Wrench } from 'lucide-react';
+// 引入 Supabase
+import { createClient } from '@supabase/supabase-js';
 
 // 引入子組件
 import Calculator from './components/Calculator';
@@ -9,7 +11,14 @@ import DestinationModal from './components/DestinationModal';
 import BuyBuyBuyModal from './components/BuyBuyBuyModal';
 import ToolModal from './components/ToolModal';
 
+// 初始化 Supabase 連線
+const supabase = createClient(
+  'https://zjcdhfafehcbbiljevoi.supabase.co', 
+  'sb_publishable_8f530wHsNhiv4O7JZ--O7Q_IolVAPyF'
+);
+
 export default function App() {
+  // --- 狀態管理 ---
   const [trips, setTrips] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('travel_trips') || '["KYUSHU"]');
@@ -25,13 +34,26 @@ export default function App() {
 
   const fontStyle = { fontFamily: 'MORITAD, sans-serif' };
 
-  // --- 修正處：移除原本可能存在的 const theme 宣告以解決 TS6133 ---
-
+  // --- 核心邏輯：本地與雲端同步 ---
   useEffect(() => {
     localStorage.setItem('travel_trips', JSON.stringify(trips));
     localStorage.setItem('current_trip', currentTrip);
+    
+    // 同步到雲端
+    syncToCloud(currentTrip);
     updateAllStats();
   }, [trips, currentTrip, activeModal]);
+
+  // 新增：寫入雲端功能
+  const syncToCloud = async (tripName: string) => {
+    try {
+      await supabase
+        .from('Go_Away')
+        .insert([{ name: `切換旅程：${tripName}`, category: '系統連線', is_checked: false }]);
+    } catch (e) {
+      console.error("雲端連線異常", e);
+    }
+  };
 
   const updateAllStats = () => {
     try {
@@ -70,6 +92,7 @@ export default function App() {
     }
   };
 
+  // --- 樣式設定 ---
   const cardBase: React.CSSProperties = {
     backgroundColor: 'white',
     border: '4px solid black',
@@ -111,6 +134,7 @@ export default function App() {
           </div>
         </div>
 
+        {/* 核心功能按鈕區 */}
         <div style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div style={{ backgroundColor: 'black', padding: '12px', borderRadius: '50%', display: 'flex' }}>
@@ -150,6 +174,7 @@ export default function App() {
         </div>
       </div>
 
+      {/* 彈窗組件區 */}
       {activeModal === 'destination' && (
         <DestinationModal 
           trips={trips} 

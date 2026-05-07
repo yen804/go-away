@@ -1,66 +1,43 @@
-<!doctype html>
-<html lang="zh-Hant">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>go-away</title>
-
-    <link rel="manifest" href="manifest.json">
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="GoAway">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/826/826070.png">
-    
-    <meta name="theme-color" content="#FF9933">
-
-    <script>
-      // 2. 註冊 Service Worker 實現離線功能
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          // 註冊位於 public 資料夾下的 sw.js
-          navigator.serviceWorker.register('sw.js')
-            .then(reg => {
-              console.log('離線功能註冊成功！範圍為:', reg.scope);
-            })
-            .catch(err => {
-              console.error('Service Worker 註冊失敗：', err);
-            });
-        });
-      }
-    </script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
+  // 這裡請務必填入你剛剛截圖中的那兩串
   const SUPABASE_URL = 'https://zjcdhfafehcbbiljevoi.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_8f530wHsNhiv4O7JZ--O7Q_IolVAPyF';
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // 這個函式會強行塞一筆資料到雲端
-  async function cloudTest() {
-    console.log("嘗試傳送到雲端...");
-    const { data, error } = await supabase
-      .from('Go_Away')
-      .insert([{ name: '福岡藥妝測試', is_checked: false, category: '必買' }])
-      .select();
-
-    if (error) {
-      alert('失敗了！原因：' + error.message);
-      console.error(error);
-    } else {
-      alert('成功！資料已經上傳到雲端了');
-      console.log('傳回的資料：', data);
-    }
+  // 初始化（加個 try-catch 預防噴錯）
+  let supabase;
+  try {
+    supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log("Supabase 初始化成功");
+  } catch (e) {
+    console.error("初始化失敗:", e);
   }
+
+  // 加上 window. 使其全域可用
+  window.cloudTest = async function() {
+    console.log("按鈕被點擊了！");
+    if (!supabase) {
+      alert("Supabase 還沒準備好");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('Go_Away')
+        .insert([{ name: '福岡測試-' + new Date().toLocaleTimeString(), is_checked: false, category: '必買' }])
+        .select();
+
+      if (error) throw error;
+      alert('恭喜！雲端連線成功，資料已存入');
+      console.log('傳回資料:', data);
+    } catch (err) {
+      alert('連線出錯：' + err.message);
+      console.error(err);
+    }
+  };
 </script>
 
-<button onclick="cloudTest()" style="position:fixed; bottom:20px; right:20px; z-index:999; padding:15px; background:green; color:white; border-radius:50px;">
+<button onclick="cloudTest()" style="position:fixed; bottom:20px; right:20px; z-index:99999; padding:15px 25px; background:green; color:white; border-radius:50px; border:none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor:pointer; font-weight:bold;">
   雲端測試
 </button>

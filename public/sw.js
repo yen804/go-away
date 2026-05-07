@@ -1,27 +1,51 @@
-const CACHE_NAME = 'go-away-v2';
+const CACHE_NAME = 'go-away-v3';
+// 這裡列出 App 啟動必須要有的檔案
+const PRECACHE_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json'
+];
 
-// 1. 安裝時立刻跳過等待
+// 1. 安裝階段：強行下載必要資源
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(PRECACHE_ASSETS);
+    }).then(() => self.skipWaiting())
+  );
 });
 
-// 2. 啟動時立刻取得控制權
+// 2. 啟動階段：清理舊版本，接管所有頁面
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.filter(name => name !== CACHE_NAME).map(name => caches.delete(name))
+      );
+    }).then(() => clients.claim())
+  );
 });
 
-// 3. 核心邏輯：攔截請求
+// 3. 攔截階段：優先從快取拿資料，沒快取才走網路
 self.addEventListener('fetch', (event) => {
-  // 只處理導航請求（開啟頁面）或是 GET 請求
-  if (event.request.mode === 'navigate' || event.request.method === 'GET') {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        // 當 fetch 失敗（即斷網）時，嘗試從快取中找
-        return caches.match(event.request).then((response) => {
-          // 如果快取有就給快取，沒有就強制給 index.html
-          return response || caches.match('/index.html');
-        });
-      })
-    );
-  }
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse; // 命中快取，秒開！
+      }
+      return fetch(event.request).then((networkResponse) => {
+        // 順便把新抓到的資料存進快取（例如你新加的圖片）
+        if (event.request.method === 'GET') {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return networkResponse;
+      });
+    }).catch(() => {
+      // 萬一徹底斷網且沒快取，保底回傳 index.html
+      return caches.match('/index.html');
+    })
+  );
 });

@@ -43,7 +43,7 @@ export default function App() {
 
   // --- 雲端同步邏輯 ---
   
-  // 1. 從雲端抓取最新狀態
+  // 1. 從雲端抓取最新狀態 (接收端)
   const fetchLatestStatus = async () => {
     try {
       const { data, error: _error } = await supabase
@@ -54,9 +54,9 @@ export default function App() {
 
       if (data && data.length > 0) {
         const lastAction = data[0];
-        // 如果雲端旅程跟本地不同，則更新
-        if (lastAction.category === '旅程切換' && lastAction.name !== currentTrip) {
-          console.log(`同步更新：來自 ${lastAction.device || '雲端'}`);
+        // 寬鬆判斷：只要名稱跟現在本地不同，就同步（解決分類名稱不一致問題）
+        if (lastAction.name !== currentTrip) {
+          console.log(`同步更新：偵測到雲端變更為 ${lastAction.name}`);
           setCurrentTrip(lastAction.name);
           localStorage.setItem('current_trip', lastAction.name);
         }
@@ -66,31 +66,36 @@ export default function App() {
     }
   };
 
-  // 2. 寫入雲端
+  // 2. 寫入雲端 (傳送端)
   const syncToCloud = async (tripName: string) => {
-    await supabase.from('Go_Away').insert([{ 
-      name: tripName, 
-      category: '旅程切換', 
-      device: getDeviceLabel()
-    }]);
+    try {
+      const label = getDeviceLabel();
+      await supabase.from('Go_Away').insert([{ 
+        name: tripName, 
+        category: '旅程切換', 
+        device: label 
+      }]);
+    } catch (e) {
+      console.error("寫入雲端失敗", e);
+    }
   };
 
-  // 3. 設定定時同步 (每10秒)
+  // 3. 設定定時同步 (每 10 秒自動檢查一次)
   useEffect(() => {
     fetchLatestStatus();
     const interval = setInterval(fetchLatestStatus, 10000);
     return () => clearInterval(interval);
   }, [currentTrip]);
 
-  // 4. 當手動切換旅程時
+  // 4. 當使用者手動點擊「切換旅程」時
   const handleTripChange = (dest: string) => {
     setCurrentTrip(dest);
     localStorage.setItem('current_trip', dest);
-    syncToCloud(dest);
+    syncToCloud(dest); // 觸發寫入雲端
     setActiveModal(null);
   };
 
-  // --- 數據更新邏輯 ---
+  // --- 數據更新邏輯 (維持原始結構) ---
   useEffect(() => {
     localStorage.setItem('travel_trips', JSON.stringify(trips));
     updateAllStats();
@@ -120,10 +125,10 @@ export default function App() {
         const packed = packingData.filter((i: any) => i.packed).length;
         setPackingProgress(packingData.length > 0 ? Math.round((packed / packingData.length) * 100) : 0);
       }
-    } catch (e) { console.error("數據同步失敗", e); }
+    } catch (e) { console.error("數據更新失敗", e); }
   };
 
-  // --- 樣式設定 ---
+  // --- UI 樣式設定 (維持原始設計) ---
   const cardBase: React.CSSProperties = {
     backgroundColor: 'white', border: '4px solid black', boxShadow: '8px 8px 0px black', cursor: 'pointer', ...fontStyle
   };
@@ -138,12 +143,12 @@ export default function App() {
     <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', ...fontStyle }}>
       <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
-        {/* 標題區 */}
+        {/* 標題與切換旅程 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ textAlign: 'left' }}>
             <div style={{ display: 'inline-block', transform: 'rotate(-6deg)', transformOrigin: 'left bottom' }}>
               <span style={{ backgroundColor: 'black', color: 'white', fontSize: '18px', padding: '6px 16px', borderRadius: '12px', letterSpacing: '2px', fontWeight: 'bold' }}>
-                離家出走計畫中
+                離家出走計劃中
               </span>
             </div>
             <h1 style={{ fontSize: '64px', marginTop: '8px', marginBottom: '20px', lineHeight: 1, color: 'black', transform: 'rotate(-2deg)' }}>
@@ -159,7 +164,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* 主功能區 */}
+        {/* 主功能清單 */}
         <div style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div style={{ backgroundColor: 'black', padding: '12px', borderRadius: '50%', display: 'flex' }}><Map color="white" size={32} /></div>
@@ -197,7 +202,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* 彈窗 */}
+      {/* 彈窗渲染 */}
       {activeModal === 'destination' && (
         <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={handleTripChange} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />
       )}

@@ -1,22 +1,32 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>go-away</title>
 
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="GoAway">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/826/826070.png">
+    
     <meta name="theme-color" content="#FF9933">
 
     <script>
       // 2. 註冊 Service Worker 實現離線功能
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          // 這裡的路徑 /sw.js 對應你放在根目錄或 public 資料夾下的檔案
-          navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('離線功能準備就緒！', reg))
-            .catch(err => console.log('Service Worker 註冊失敗：', err));
+          // 註冊位於 public 資料夾下的 sw.js
+          navigator.serviceWorker.register('sw.js')
+            .then(reg => {
+              console.log('離線功能註冊成功！範圍為:', reg.scope);
+            })
+            .catch(err => {
+              console.error('Service Worker 註冊失敗：', err);
+            });
         });
       }
     </script>

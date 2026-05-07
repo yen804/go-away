@@ -5,6 +5,21 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>go-away</title>
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#FF9933">
+
+    <script>
+      // 2. 註冊 Service Worker 實現離線功能
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          // 這裡的路徑 /sw.js 對應你放在根目錄或 public 資料夾下的檔案
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('離線功能準備就緒！', reg))
+            .catch(err => console.log('Service Worker 註冊失敗：', err));
+        });
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

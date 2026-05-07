@@ -1,0 +1,17 @@
+{
+  "short_name": "GoAway",
+  "name": "Go-Away 離家出走計劃中",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/826/826070.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#FF9933",
+  "display": "standalone",
+  "scope": "./",
+  "theme_color": "#FF9933"
+}

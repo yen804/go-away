@@ -36,3 +36,31 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  const SUPABASE_URL = 'https://zjcdhfafehcbbiljevoi.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_8f530wHsNhiv4O7JZ--O7Q_IolVAPyF';
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // 這個函式會強行塞一筆資料到雲端
+  async function cloudTest() {
+    console.log("嘗試傳送到雲端...");
+    const { data, error } = await supabase
+      .from('Go_Away')
+      .insert([{ name: '福岡藥妝測試', is_checked: false, category: '必買' }])
+      .select();
+
+    if (error) {
+      alert('失敗了！原因：' + error.message);
+      console.error(error);
+    } else {
+      alert('成功！資料已經上傳到雲端了');
+      console.log('傳回的資料：', data);
+    }
+  }
+</script>
+
+<button onclick="cloudTest()" style="position:fixed; bottom:20px; right:20px; z-index:999; padding:15px; background:green; color:white; border-radius:50px;">
+  雲端測試
+</button>

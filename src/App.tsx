@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Map, Heart, Luggage, ShoppingBag, Calculator as CalcIcon, ArrowRight, Wrench } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// 引入子組件
+// 引入子組件 (請確保您的元件路徑正確)
 import Calculator from './components/Calculator';
 import PackingModal from './components/PackingModal';
 import WishlistModal from './components/WishlistModal';
@@ -28,8 +28,8 @@ export default function App() {
   // --- 狀態管理 ---
   const [trips, setTrips] = useState<string[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem('travel_trips') || '["KYUSHU"]');
-    } catch { return ["KYUSHU"]; }
+      return JSON.parse(localStorage.getItem('travel_trips') || '["KYUSHU", "TAIWAN"]');
+    } catch { return ["KYUSHU", "TAIWAN"]; }
   });
   
   const [currentTrip, setCurrentTrip] = useState(() => localStorage.getItem('current_trip') || 'KYUSHU');
@@ -41,10 +41,13 @@ export default function App() {
 
   const fontStyle = { fontFamily: 'MORITAD, sans-serif' };
 
-  // --- 雲端同步邏輯 ---
+  // --- 核心同步邏輯 (離線防護強化) ---
   
   // 1. 從雲端抓取最新狀態 (接收端)
   const fetchLatestStatus = async () => {
+    // 💡 離線檢查：若無網路，直接結束函式，不報錯也不等待
+    if (!navigator.onLine) return;
+
     try {
       const { data, error } = await supabase
         .from('Go_Away')
@@ -53,54 +56,60 @@ export default function App() {
         .limit(1);
 
       if (error) {
-        console.error("讀取雲端失敗 (400 可能是因為資料表為空):", error.message);
+        console.warn("同步讀取暫時失效 (可能是網路不穩):", error.message);
         return;
       }
 
       if (data && data.length > 0) {
         const lastAction = data[0];
-        // 寬鬆判斷：只要名稱不同就更新，並記錄是誰改的
         if (lastAction.name !== currentTrip) {
-          console.log(`同步：由 ${lastAction.device || '雲端'} 更新為 ${lastAction.name}`);
+          console.log(`📡 同步：雲端最新旅程為 ${lastAction.name}`);
           setCurrentTrip(lastAction.name);
           localStorage.setItem('current_trip', lastAction.name);
         }
       }
     } catch (e) {
-      console.error("同步連線異常", e);
+      // 捕捉網路超時或其他異常，確保 App 不崩潰
+      console.warn("目前無法連線至雲端，維持本地模式運作。");
     }
   };
 
   // 2. 寫入雲端 (傳送端)
   const syncToCloud = async (tripName: string) => {
+    if (!navigator.onLine) {
+      console.log("離線狀態，略過雲端同步。");
+      return;
+    }
+
     try {
       const label = getDeviceLabel();
       const { error } = await supabase.from('Go_Away').insert([
         { 
           name: tripName, 
           category: '旅程切換', 
-          device: label // 確保與資料庫小寫 device 欄位一致
+          device: label,
+          is_checked: false // 確保符合資料庫 NOT NULL 限制
         }
       ]);
 
       if (error) {
-        console.error("寫入雲端失敗 (請檢查 SQL 欄位是否建立):", error.message);
-      } else {
-        console.log("成功同步至雲端:", tripName);
+        console.error("寫入雲端失敗:", error.message);
       }
     } catch (e) {
-      console.error("寫入函式異常", e);
+      console.error("執行寫入時發生連線異常");
     }
   };
 
-  // 3. 設定定時同步 (每 10 秒)
+  // --- 副作用處理 ---
+
+  // 定時器：每 10 秒嘗試同步一次 (僅在有網時生效)
   useEffect(() => {
     fetchLatestStatus();
     const interval = setInterval(fetchLatestStatus, 10000);
     return () => clearInterval(interval);
   }, [currentTrip]);
 
-  // 4. 當手動切換旅程時
+  // 當手動切換旅程時
   const handleTripChange = (dest: string) => {
     setCurrentTrip(dest);
     localStorage.setItem('current_trip', dest);
@@ -108,7 +117,7 @@ export default function App() {
     setActiveModal(null);
   };
 
-  // --- 數據統計邏輯 (維持原始結構) ---
+  // 數據統計更新 (讀取 LocalStorage)
   useEffect(() => {
     localStorage.setItem('travel_trips', JSON.stringify(trips));
     updateAllStats();
@@ -116,6 +125,7 @@ export default function App() {
 
   const updateAllStats = () => {
     try {
+      // 許願清單統計
       const wishRaw = localStorage.getItem('travel_buys');
       const wishAll = wishRaw ? JSON.parse(wishRaw) : [];
       if (Array.isArray(wishAll)) {
@@ -124,6 +134,7 @@ export default function App() {
         setWishStats({ total: currentItems.length, todo: currentItems.length - done });
       }
 
+      // 必買好物統計
       const buyRaw = localStorage.getItem('buy_buy_buy_v10');
       const buyAll = buyRaw ? JSON.parse(buyRaw) : [];
       if (Array.isArray(buyAll)) {
@@ -132,6 +143,7 @@ export default function App() {
         setBuyStats({ total: currentItems.length, todo: currentItems.length - done });
       }
 
+      // 行李進度統計
       const packingRaw = localStorage.getItem(`packing_${currentTrip}`);
       const packingData = packingRaw ? JSON.parse(packingRaw) : [];
       if (Array.isArray(packingData)) {
@@ -141,7 +153,7 @@ export default function App() {
     } catch (e) { console.error("數據統計異常", e); }
   };
 
-  // --- UI 樣式 (維持原始設計) ---
+  // --- UI 組件 ---
   const cardBase: React.CSSProperties = {
     backgroundColor: 'white', border: '4px solid black', boxShadow: '8px 8px 0px black', cursor: 'pointer', ...fontStyle
   };
@@ -156,6 +168,7 @@ export default function App() {
     <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', ...fontStyle }}>
       <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
+        {/* Header 區塊 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ textAlign: 'left' }}>
             <div style={{ display: 'inline-block', transform: 'rotate(-6deg)', transformOrigin: 'left bottom' }}>
@@ -176,6 +189,7 @@ export default function App() {
           </div>
         </div>
 
+        {/* 行程按鈕 (未來改裝重點) */}
         <div style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div style={{ backgroundColor: 'black', padding: '12px', borderRadius: '50%', display: 'flex' }}><Map color="white" size={32} /></div>
@@ -184,6 +198,7 @@ export default function App() {
           <ArrowRight size={40} strokeWidth={4} />
         </div>
 
+        {/* 功能網格 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
           <div onClick={() => setActiveModal('wish')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(-1.5deg)' }}>
             <Heart size={30} color="#EF4444" fill="#EF4444" />
@@ -213,7 +228,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* 彈窗部分 */}
+      {/* 彈窗渲染 */}
       {activeModal === 'destination' && (
         <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={handleTripChange} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />
       )}

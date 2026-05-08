@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Map, Heart, Luggage, ShoppingBag, Calculator as CalcIcon, ArrowRight, Wrench } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// 引入子組件 (請確保您的元件路徑正確)
+// 子組件引入
 import Calculator from './components/Calculator';
 import PackingModal from './components/PackingModal';
 import WishlistModal from './components/WishlistModal';
@@ -10,13 +10,14 @@ import DestinationModal from './components/DestinationModal';
 import BuyBuyBuyModal from './components/BuyBuyBuyModal';
 import ToolModal from './components/ToolModal';
 
-// 初始化 Supabase
-const supabase = createClient(
-  'https://zjcdhfafehcbbiljevoi.supabase.co', 
-  'sb_publishable_8f530wHsNhiv4O7JZ--O7Q_IolVAPyF'
-);
+// 只有在瀏覽器環境且有網路時才建立 Supabase 實例的函式
+const getSupabase = () => {
+  return createClient(
+    'https://zjcdhfafehcbbiljevoi.supabase.co', 
+    'sb_publishable_8f530wHsNhiv4O7JZ--O7Q_IolVAPyF'
+  );
+};
 
-// 辨識使用者設備
 const getDeviceLabel = () => {
   const ua = navigator.userAgent;
   if (/iPhone|iPad|iPod/i.test(ua)) return "家人iPhone";
@@ -25,7 +26,6 @@ const getDeviceLabel = () => {
 };
 
 export default function App() {
-  // --- 狀態管理 ---
   const [trips, setTrips] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('travel_trips') || '["KYUSHU", "TAIWAN"]');
@@ -34,82 +34,79 @@ export default function App() {
   
   const [currentTrip, setCurrentTrip] = useState(() => localStorage.getItem('current_trip') || 'KYUSHU');
   const [activeModal, setActiveModal] = useState<string | null>(null);
-
   const [wishStats, setWishStats] = useState({ total: 0, todo: 0 });
   const [buyStats, setBuyStats] = useState({ total: 0, todo: 0 });
   const [packingProgress, setPackingProgress] = useState(0);
 
   const fontStyle = { fontFamily: 'MORITAD, sans-serif' };
 
-  // --- 核心同步邏輯 (離線防護強化) ---
-  
-  // 1. 從雲端抓取最新狀態 (接收端)
-  const fetchLatestStatus = async () => {
-    // 💡 離線檢查：若無網路，直接結束函式，不報錯也不等待
+  // --- 強化版雲端同步邏輯 ---
+
+  const fetchLatestStatus = useCallback(async () => {
+    // 💡 離線直接退出
     if (!navigator.onLine) return;
 
+    // 💡 設定 2 秒強制斷開，避免飛航模式卡死
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+
     try {
-      const { data, error } = await supabase
+      const client = getSupabase();
+      const { data, error } = await client
         .from('Go_Away')
-        .select('name, device')
+        .select('name')
         .order('created_at', { ascending: false })
-        .limit(1);
+        .limit(1)
+        .abortSignal(controller.signal);
 
-      if (error) {
-        console.warn("同步讀取暫時失效 (可能是網路不穩):", error.message);
-        return;
-      }
-
-      if (data && data.length > 0) {
+      if (!error && data && data.length > 0) {
         const lastAction = data[0];
         if (lastAction.name !== currentTrip) {
-          console.log(`📡 同步：雲端最新旅程為 ${lastAction.name}`);
           setCurrentTrip(lastAction.name);
           localStorage.setItem('current_trip', lastAction.name);
         }
       }
     } catch (e) {
-      // 捕捉網路超時或其他異常，確保 App 不崩潰
-      console.warn("目前無法連線至雲端，維持本地模式運作。");
+      console.log("連線不穩定，自動轉為離線模式");
+    } finally {
+      clearTimeout(timeoutId);
     }
-  };
+  }, [currentTrip]);
 
-  // 2. 寫入雲端 (傳送端)
   const syncToCloud = async (tripName: string) => {
-    if (!navigator.onLine) {
-      console.log("離線狀態，略過雲端同步。");
-      return;
-    }
+    if (!navigator.onLine) return;
 
     try {
-      const label = getDeviceLabel();
-      const { error } = await supabase.from('Go_Away').insert([
+      const client = getSupabase();
+      await client.from('Go_Away').insert([
         { 
           name: tripName, 
           category: '旅程切換', 
-          device: label,
-          is_checked: false // 確保符合資料庫 NOT NULL 限制
+          device: getDeviceLabel(),
+          is_checked: false 
         }
       ]);
-
-      if (error) {
-        console.error("寫入雲端失敗:", error.message);
-      }
     } catch (e) {
-      console.error("執行寫入時發生連線異常");
+      console.error("同步失敗");
     }
   };
 
-  // --- 副作用處理 ---
+  // --- Effect 區塊 ---
 
-  // 定時器：每 10 秒嘗試同步一次 (僅在有網時生效)
   useEffect(() => {
-    fetchLatestStatus();
-    const interval = setInterval(fetchLatestStatus, 10000);
-    return () => clearInterval(interval);
-  }, [currentTrip]);
+    // 初始檢查
+    if (navigator.onLine) fetchLatestStatus();
 
-  // 當手動切換旅程時
+    // 定時檢查 (僅在有網時啟動)
+    const interval = setInterval(() => {
+      if (navigator.onLine) {
+        fetchLatestStatus();
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [fetchLatestStatus]);
+
   const handleTripChange = (dest: string) => {
     setCurrentTrip(dest);
     localStorage.setItem('current_trip', dest);
@@ -117,7 +114,6 @@ export default function App() {
     setActiveModal(null);
   };
 
-  // 數據統計更新 (讀取 LocalStorage)
   useEffect(() => {
     localStorage.setItem('travel_trips', JSON.stringify(trips));
     updateAllStats();
@@ -125,7 +121,6 @@ export default function App() {
 
   const updateAllStats = () => {
     try {
-      // 許願清單統計
       const wishRaw = localStorage.getItem('travel_buys');
       const wishAll = wishRaw ? JSON.parse(wishRaw) : [];
       if (Array.isArray(wishAll)) {
@@ -134,7 +129,6 @@ export default function App() {
         setWishStats({ total: currentItems.length, todo: currentItems.length - done });
       }
 
-      // 必買好物統計
       const buyRaw = localStorage.getItem('buy_buy_buy_v10');
       const buyAll = buyRaw ? JSON.parse(buyRaw) : [];
       if (Array.isArray(buyAll)) {
@@ -143,32 +137,23 @@ export default function App() {
         setBuyStats({ total: currentItems.length, todo: currentItems.length - done });
       }
 
-      // 行李進度統計
       const packingRaw = localStorage.getItem(`packing_${currentTrip}`);
       const packingData = packingRaw ? JSON.parse(packingRaw) : [];
       if (Array.isArray(packingData)) {
         const packed = packingData.filter((i: any) => i.packed).length;
         setPackingProgress(packingData.length > 0 ? Math.round((packed / packingData.length) * 100) : 0);
       }
-    } catch (e) { console.error("數據統計異常", e); }
+    } catch (e) { console.error("統計失敗"); }
   };
 
-  // --- UI 組件 ---
   const cardBase: React.CSSProperties = {
     backgroundColor: 'white', border: '4px solid black', boxShadow: '8px 8px 0px black', cursor: 'pointer', ...fontStyle
   };
-
-  const StatBadge = ({ todo, total }: { todo: number, total: number }) => (
-    <div style={{ fontSize: '14px', backgroundColor: 'black', color: 'white', padding: '2px 10px', borderRadius: '10px', marginTop: '8px', display: 'inline-block', fontWeight: '900' }}>
-      {todo} / {total}
-    </div>
-  );
 
   return (
     <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', ...fontStyle }}>
       <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
-        {/* Header 區塊 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ textAlign: 'left' }}>
             <div style={{ display: 'inline-block', transform: 'rotate(-6deg)', transformOrigin: 'left bottom' }}>
@@ -189,8 +174,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* 行程按鈕 (未來改裝重點) */}
-        <div style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
+        <div onClick={() => setActiveModal(null)} style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div style={{ backgroundColor: 'black', padding: '12px', borderRadius: '50%', display: 'flex' }}><Map color="white" size={32} /></div>
             <span style={{ fontSize: '32px', fontWeight: 'bold' }}>看行程</span>
@@ -198,12 +182,13 @@ export default function App() {
           <ArrowRight size={40} strokeWidth={4} />
         </div>
 
-        {/* 功能網格 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
           <div onClick={() => setActiveModal('wish')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(-1.5deg)' }}>
             <Heart size={30} color="#EF4444" fill="#EF4444" />
             <p style={{ fontSize: '22px', margin: '10px 0 0 0', fontWeight: 'bold' }}>許願清單</p>
-            <StatBadge todo={wishStats.todo} total={wishStats.total} />
+            <div style={{ fontSize: '14px', backgroundColor: 'black', color: 'white', padding: '2px 10px', borderRadius: '10px', marginTop: '8px', display: 'inline-block', fontWeight: '900' }}>
+              {wishStats.todo} / {wishStats.total}
+            </div>
           </div>
 
           <div onClick={() => setActiveModal('packing')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(1.2deg)' }}>
@@ -218,7 +203,9 @@ export default function App() {
           <div onClick={() => setActiveModal('buy')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(1deg)' }}>
             <ShoppingBag size={30} color="#F97316" />
             <p style={{ fontSize: '22px', margin: '10px 0 0 0', fontWeight: 'bold' }}>必買好物</p>
-            <StatBadge todo={buyStats.todo} total={buyStats.total} />
+            <div style={{ fontSize: '14px', backgroundColor: 'black', color: 'white', padding: '2px 10px', borderRadius: '10px', marginTop: '8px', display: 'inline-block', fontWeight: '900' }}>
+              {buyStats.todo} / {buyStats.total}
+            </div>
           </div>
 
           <div onClick={() => setActiveModal('tools')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(-1deg)' }}>
@@ -228,7 +215,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* 彈窗渲染 */}
       {activeModal === 'destination' && (
         <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={handleTripChange} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />
       )}

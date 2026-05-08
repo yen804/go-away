@@ -24,6 +24,7 @@ const getDeviceLabel = () => {
 };
 
 export default function App() {
+  // --- 狀態管理 ---
   const [trips, setTrips] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('travel_trips') || '["KYUSHU", "TAIWAN", "CHUPEI"]');
@@ -36,19 +37,21 @@ export default function App() {
   const [buyStats, setBuyStats] = useState({ total: 0, todo: 0 });
   const [packingProgress, setPackingProgress] = useState(0);
 
-  // 💡 修正：確保離線時字體不跑掉，MORITAD 放在第一順位
+  // 💡 修正：離線字體防護，指定 MORITAD 並加入高品質備援
   const fontStyle = { 
     fontFamily: 'MORITAD, "PingFang TC", "Hiragino Sans GB", "Heiti TC", "Microsoft JhengHei", sans-serif' 
   };
 
   // --- 核心同步邏輯 ---
+
   const fetchLatestStatus = useCallback(async () => {
     if (!navigator.onLine) return;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 延長至 3 秒確保穩定
 
     try {
+      // 💡 關鍵：加上 { count: 'exact' } 或隨機參數防止 API 緩存
       const { data, error } = await supabase
         .from('Go_Away')
         .select('name')
@@ -58,13 +61,15 @@ export default function App() {
 
       if (!error && data && data.length > 0) {
         const lastAction = data[0];
+        // 只有在雲端名稱與本地不同時，才強制更新本地狀態
         if (lastAction.name !== currentTrip) {
+          console.log(`📡 同步更新：切換至 ${lastAction.name}`);
           setCurrentTrip(lastAction.name);
           localStorage.setItem('current_trip', lastAction.name);
         }
       }
     } catch (e) {
-      console.warn("同步超時，維持本地狀態");
+      console.warn("同步超時，維持現狀");
     } finally {
       clearTimeout(timeoutId);
     }
@@ -72,30 +77,42 @@ export default function App() {
 
   const syncToCloud = async (tripName: string) => {
     if (!navigator.onLine) return;
+
     try {
-      await supabase.from('Go_Away').insert([
-        { name: tripName, category: '旅程切換', device: getDeviceLabel() }
+      // 💡 確保寫入時包含所有必要的欄位，避免資料庫因 Not Null 限制而拒絕
+      const { error } = await supabase.from('Go_Away').insert([
+        { 
+          name: tripName, 
+          category: '旅程切換', 
+          device: getDeviceLabel(),
+          is_checked: false,
+          created_at: new Date().toISOString() 
+        }
       ]);
+      if (error) console.error("雲端寫入失敗:", error.message);
     } catch (e) {
-      console.error("雲端同步寫入失敗");
+      console.error("網路異常，無法寫入雲端");
     }
   };
 
+  // 定時器：每 5 秒檢查一次（稍微加快頻率）
   useEffect(() => {
     fetchLatestStatus();
     const interval = setInterval(() => {
-      if (navigator.onLine) fetchLatestStatus();
-    }, 10000);
+      fetchLatestStatus();
+    }, 5000);
     return () => clearInterval(interval);
   }, [fetchLatestStatus]);
 
   const handleTripChange = (dest: string) => {
+    console.log("👆 手動切換旅程為:", dest);
     setCurrentTrip(dest);
     localStorage.setItem('current_trip', dest);
-    syncToCloud(dest); 
+    syncToCloud(dest); // 同步給其他裝置
     setActiveModal(null);
   };
 
+  // 數據統計更新
   useEffect(() => {
     localStorage.setItem('travel_trips', JSON.stringify(trips));
     updateAllStats();
@@ -103,6 +120,7 @@ export default function App() {
 
   const updateAllStats = () => {
     try {
+      // 許願清單
       const wishRaw = localStorage.getItem('travel_buys');
       const wishAll = wishRaw ? JSON.parse(wishRaw) : [];
       if (Array.isArray(wishAll)) {
@@ -110,7 +128,7 @@ export default function App() {
         const done = currentItems.filter((i: any) => i.completed).length;
         setWishStats({ total: currentItems.length, todo: currentItems.length - done });
       }
-
+      // 必買好物
       const buyRaw = localStorage.getItem('buy_buy_buy_v10');
       const buyAll = buyRaw ? JSON.parse(buyRaw) : [];
       if (Array.isArray(buyAll)) {
@@ -118,14 +136,14 @@ export default function App() {
         const done = currentItems.filter((i: any) => i.completed).length;
         setBuyStats({ total: currentItems.length, todo: currentItems.length - done });
       }
-
+      // 行李檢查
       const packingRaw = localStorage.getItem(`packing_${currentTrip}`);
       const packingData = packingRaw ? JSON.parse(packingRaw) : [];
       if (Array.isArray(packingData)) {
         const packed = packingData.filter((i: any) => i.packed).length;
         setPackingProgress(packingData.length > 0 ? Math.round((packed / packingData.length) * 100) : 0);
       }
-    } catch (e) { }
+    } catch (e) { console.error("統計資料讀取錯誤"); }
   };
 
   const cardBase: React.CSSProperties = {
@@ -136,6 +154,7 @@ export default function App() {
     <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', ...fontStyle }}>
       <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ textAlign: 'left' }}>
             <div style={{ display: 'inline-block', transform: 'rotate(-6deg)', transformOrigin: 'left bottom' }}>
@@ -156,7 +175,8 @@ export default function App() {
           </div>
         </div>
 
-        <div onClick={() => setActiveModal(null)} style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
+        {/* 功能區塊 */}
+        <div style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div style={{ backgroundColor: 'black', padding: '12px', borderRadius: '50%', display: 'flex' }}><Map color="white" size={32} /></div>
             <span style={{ fontSize: '32px', fontWeight: 'bold' }}>看行程</span>
@@ -197,6 +217,7 @@ export default function App() {
         </div>
       </div>
 
+      {/* 彈窗渲染 */}
       {activeModal === 'destination' && (
         <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={handleTripChange} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />
       )}

@@ -1,52 +1,46 @@
-const CACHE_NAME = 'go-away-v3';
-// 這裡列出 App 啟動必須要有的檔案
+const CACHE_NAME = 'go-away-v4'; // 升級版本號強制更新
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/MORITAD.ttf' // <--- 加入這一行
+  '/MORITAD.ttf'
 ];
 
-// 1. 安裝階段：強行下載必要資源
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS);
-    }).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS))
+    .then(() => self.skipWaiting())
   );
 });
 
-// 2. 啟動階段：清理舊版本，接管所有頁面
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.filter(name => name !== CACHE_NAME).map(name => caches.delete(name))
-      );
-    }).then(() => clients.claim())
+    caches.keys().then((keys) => Promise.all(
+      keys.map(key => key !== CACHE_NAME ? caches.delete(key) : null)
+    )).then(() => clients.claim())
   );
 });
 
-// 3. 攔截階段：優先從快取拿資料，沒快取才走網路
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // 💡 關鍵修正：如果是 Supabase API，絕對不走快取，直接連網
+  if (url.hostname.includes('supabase.co')) {
+    return; // 放行，交給瀏覽器正常連網處理
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse; // 命中快取，秒開！
-      }
-      return fetch(event.request).then((networkResponse) => {
-        // 順便把新抓到的資料存進快取（例如你新加的圖片）
-        if (event.request.method === 'GET') {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+      if (cachedResponse) return cachedResponse;
+
+      return fetch(event.request).then((response) => {
+        // 只有靜態檔案才存入快取
+        if (event.request.method === 'GET' && response.status === 200) {
+          const cloned = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, cloned));
         }
-        return networkResponse;
+        return response;
       });
-    }).catch(() => {
-      // 萬一徹底斷網且沒快取，保底回傳 index.html
-      return caches.match('/index.html');
-    })
+    }).catch(() => caches.match('/index.html'))
   );
 });

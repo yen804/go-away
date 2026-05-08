@@ -24,7 +24,6 @@ const getDeviceLabel = () => {
 };
 
 export default function App() {
-  // --- 狀態管理 ---
   const [trips, setTrips] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('travel_trips') || '["KYUSHU", "TAIWAN", "CHUPEI"]');
@@ -37,14 +36,12 @@ export default function App() {
   const [buyStats, setBuyStats] = useState({ total: 0, todo: 0 });
   const [packingProgress, setPackingProgress] = useState(0);
 
-  // --- 關鍵修正：離線字體防護 ---
-  // 加入 "PingFang TC" (iOS) 與 "Microsoft JhengHei" (Windows) 作為備援
+  // 💡 修正：確保離線時字體不跑掉，MORITAD 放在第一順位
   const fontStyle = { 
     fontFamily: 'MORITAD, "PingFang TC", "Hiragino Sans GB", "Heiti TC", "Microsoft JhengHei", sans-serif' 
   };
 
-  // --- 核心同步邏輯 (增加離線與超時防護) ---
-
+  // --- 核心同步邏輯 ---
   const fetchLatestStatus = useCallback(async () => {
     if (!navigator.onLine) return;
 
@@ -62,13 +59,12 @@ export default function App() {
       if (!error && data && data.length > 0) {
         const lastAction = data[0];
         if (lastAction.name !== currentTrip) {
-          console.log(`📡 自動同步：切換至 ${lastAction.name}`);
           setCurrentTrip(lastAction.name);
           localStorage.setItem('current_trip', lastAction.name);
         }
       }
     } catch (e) {
-      console.warn("同步連線超時或失敗，維持本地模式");
+      console.warn("同步超時，維持本地狀態");
     } finally {
       clearTimeout(timeoutId);
     }
@@ -76,30 +72,19 @@ export default function App() {
 
   const syncToCloud = async (tripName: string) => {
     if (!navigator.onLine) return;
-
     try {
-      const { error } = await supabase.from('Go_Away').insert([
-        { 
-          name: tripName, 
-          category: '旅程切換', 
-          device: getDeviceLabel(),
-          is_checked: false 
-        }
+      await supabase.from('Go_Away').insert([
+        { name: tripName, category: '旅程切換', device: getDeviceLabel() }
       ]);
-      if (error) console.error("寫入雲端失敗:", error.message);
     } catch (e) {
-      console.error("雲端寫入異常");
+      console.error("雲端同步寫入失敗");
     }
   };
 
-  // --- Effect 區塊 ---
-
   useEffect(() => {
-    fetchLatestStatus(); 
+    fetchLatestStatus();
     const interval = setInterval(() => {
-      if (navigator.onLine) {
-        fetchLatestStatus();
-      }
+      if (navigator.onLine) fetchLatestStatus();
     }, 10000);
     return () => clearInterval(interval);
   }, [fetchLatestStatus]);
@@ -151,7 +136,6 @@ export default function App() {
     <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', ...fontStyle }}>
       <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ textAlign: 'left' }}>
             <div style={{ display: 'inline-block', transform: 'rotate(-6deg)', transformOrigin: 'left bottom' }}>
@@ -172,8 +156,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* 行程看板 */}
-        <div style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
+        <div onClick={() => setActiveModal(null)} style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div style={{ backgroundColor: 'black', padding: '12px', borderRadius: '50%', display: 'flex' }}><Map color="white" size={32} /></div>
             <span style={{ fontSize: '32px', fontWeight: 'bold' }}>看行程</span>
@@ -181,7 +164,6 @@ export default function App() {
           <ArrowRight size={40} strokeWidth={4} />
         </div>
 
-        {/* 功能網格 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
           <div onClick={() => setActiveModal('wish')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(-1.5deg)' }}>
             <Heart size={30} color="#EF4444" fill="#EF4444" />

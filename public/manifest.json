@@ -1,16 +1,20 @@
 {
   "short_name": "Go Away",
-  "name": "Go Away",
+  "name": "Go Away - 離家出走",
   "icons": [
-  {
-    "src": "/icon.png",
-    "sizes": "512x512",
-    "type": "image/png"
-  }
-],
-  "start_url": "./index.html",
-  "background_color": "#FF9933",
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
   "display": "standalone",
-  "scope": "./",
-  "theme_color": "#FF9933"
+  "theme_color": "#FF9933",
+  "background_color": "#FF9933"
 }

@@ -1,4 +1,5 @@
-const CACHE_NAME = 'go-away-v4'; // 升級版本號強制更新
+const CACHE_NAME = 'go-away-v5';
+// 💡 注意：如果你部署在根目錄，路徑開頭建議都加 /
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -7,9 +8,16 @@ const PRECACHE_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  console.log('SW: Installing...');
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS))
-    .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => {
+      // 使用 map 逐一加入，避免其中一個檔案失敗導致全部失敗
+      return Promise.all(
+        PRECACHE_ASSETS.map(url => {
+          return cache.add(url).catch(err => console.error(`快取失敗的檔案: ${url}`, err));
+        })
+      );
+    }).then(() => self.skipWaiting())
   );
 });
 
@@ -23,18 +31,13 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-
-  // 💡 關鍵修正：如果是 Supabase API，絕對不走快取，直接連網
-  if (url.hostname.includes('supabase.co')) {
-    return; // 放行，交給瀏覽器正常連網處理
-  }
+  // 放行 Supabase API
+  if (url.hostname.includes('supabase.co')) return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) return cachedResponse;
-
       return fetch(event.request).then((response) => {
-        // 只有靜態檔案才存入快取
         if (event.request.method === 'GET' && response.status === 200) {
           const cloned = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, cloned));

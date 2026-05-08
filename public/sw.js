@@ -3,7 +3,8 @@ const CACHE_NAME = 'go-away-v3';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/MORITAD.ttf' // <--- 加入這一行
 ];
 
 // 1. 安裝階段：強行下載必要資源

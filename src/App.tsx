@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Map, Heart, Luggage, ShoppingBag, Calculator as CalcIcon, ArrowRight, Wrench } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// 子組件引入 (請確認路徑與您的專案一致)
+// 子組件引入
 import Calculator from './components/Calculator';
 import PackingModal from './components/PackingModal';
 import WishlistModal from './components/WishlistModal';
@@ -37,15 +37,17 @@ export default function App() {
   const [buyStats, setBuyStats] = useState({ total: 0, todo: 0 });
   const [packingProgress, setPackingProgress] = useState(0);
 
-  const fontStyle = { fontFamily: 'MORITAD, sans-serif' };
+  // --- 關鍵修正：離線字體防護 ---
+  // 加入 "PingFang TC" (iOS) 與 "Microsoft JhengHei" (Windows) 作為備援
+  const fontStyle = { 
+    fontFamily: 'MORITAD, "PingFang TC", "Hiragino Sans GB", "Heiti TC", "Microsoft JhengHei", sans-serif' 
+  };
 
   // --- 核心同步邏輯 (增加離線與超時防護) ---
 
   const fetchLatestStatus = useCallback(async () => {
-    // 💡 1. 離線檢查：若無網路，直接回傳，不碰 Supabase
     if (!navigator.onLine) return;
 
-    // 💡 2. 超時保護：設定 2.5 秒強制斷開，防止飛航模式下瀏覽器死等回應
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2500);
 
@@ -59,7 +61,6 @@ export default function App() {
 
       if (!error && data && data.length > 0) {
         const lastAction = data[0];
-        // 如果雲端旅程與本地不同，才更新
         if (lastAction.name !== currentTrip) {
           console.log(`📡 自動同步：切換至 ${lastAction.name}`);
           setCurrentTrip(lastAction.name);
@@ -74,7 +75,6 @@ export default function App() {
   }, [currentTrip]);
 
   const syncToCloud = async (tripName: string) => {
-    // 💡 離線不傳送
     if (!navigator.onLine) return;
 
     try {
@@ -94,29 +94,23 @@ export default function App() {
 
   // --- Effect 區塊 ---
 
-  // 定時器邏輯
   useEffect(() => {
-    fetchLatestStatus(); // 初始抓取
-    
+    fetchLatestStatus(); 
     const interval = setInterval(() => {
-      // 💡 只有在線才執行同步
       if (navigator.onLine) {
         fetchLatestStatus();
       }
     }, 10000);
-
     return () => clearInterval(interval);
   }, [fetchLatestStatus]);
 
-  // 手動切換旅程
   const handleTripChange = (dest: string) => {
     setCurrentTrip(dest);
     localStorage.setItem('current_trip', dest);
-    syncToCloud(dest); // 同步給家人
+    syncToCloud(dest); 
     setActiveModal(null);
   };
 
-  // 數據統計
   useEffect(() => {
     localStorage.setItem('travel_trips', JSON.stringify(trips));
     updateAllStats();
@@ -146,7 +140,7 @@ export default function App() {
         const packed = packingData.filter((i: any) => i.packed).length;
         setPackingProgress(packingData.length > 0 ? Math.round((packed / packingData.length) * 100) : 0);
       }
-    } catch (e) { /* 靜默處理統計錯誤 */ }
+    } catch (e) { }
   };
 
   const cardBase: React.CSSProperties = {
@@ -221,7 +215,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* 彈窗 */}
       {activeModal === 'destination' && (
         <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={handleTripChange} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />
       )}

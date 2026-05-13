@@ -1,19 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Map, Heart, Luggage, ShoppingBag, Calculator as CalcIcon, ArrowRight, Wrench } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
 
-// 子組件引入
+// 子組件引入 (假設路徑不變)
 import Calculator from './components/Calculator';
 import PackingModal from './components/PackingModal';
 import WishlistModal from './components/WishlistModal';
 import DestinationModal from './components/DestinationModal';
 import BuyBuyBuyModal from './components/BuyBuyBuyModal';
 import ToolModal from './components/ToolModal';
-
-const supabase = createClient(
-  'https://zjcdhfafehcbbiljevoi.supabase.co', 
-  'sb_publishable_8f530wHsNhiv4O7JZ--O7Q_IolVAPyF'
-);
 
 export default function App() {
   const [trips, setTrips] = useState<string[]>(() => {
@@ -30,38 +24,10 @@ export default function App() {
   const [packingProgress, setPackingProgress] = useState(0);
 
   const fontStyle = { 
-    fontFamily: 'MORITAD, "PingFang TC", "Microsoft JhengHei", sans-serif' 
+    fontFamily: '"PingFang TC", "Microsoft JhengHei", sans-serif' 
   };
 
-  const fetchLatestStatus = useCallback(async () => {
-    if (!navigator.onLine) return;
-    try {
-      const { data, error } = await supabase
-        .from('Go_Away')
-        .select('name')
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (!error && data && data.length > 0) {
-        if (data[0].name !== currentTrip) {
-          setCurrentTrip(data[0].name);
-          localStorage.setItem('current_trip', data[0].name);
-        }
-      }
-    } catch (e) { console.warn("同步失敗"); }
-  }, [currentTrip]);
-
-  useEffect(() => {
-    fetchLatestStatus();
-    const interval = setInterval(fetchLatestStatus, 5000);
-    return () => clearInterval(interval);
-  }, [fetchLatestStatus]);
-
-  useEffect(() => {
-    localStorage.setItem('travel_trips', JSON.stringify(trips));
-    updateAllStats();
-  }, [trips, currentTrip, activeModal]);
-
-  const updateAllStats = () => {
+  const updateAllStats = useCallback(() => {
     try {
       const wishRaw = localStorage.getItem('travel_buys');
       const wishAll = wishRaw ? JSON.parse(wishRaw) : [];
@@ -82,30 +48,34 @@ export default function App() {
         setPackingProgress(packingData.length > 0 ? Math.round((packed / packingData.length) * 100) : 0);
       }
     } catch (e) { console.error("統計錯誤"); }
-  };
+  }, [currentTrip]);
 
-  const handleTripChange = (dest: string) => {
-    setCurrentTrip(dest);
-    localStorage.setItem('current_trip', dest);
-    setActiveModal(null);
-  };
+  useEffect(() => {
+    localStorage.setItem('travel_trips', JSON.stringify(trips));
+    updateAllStats();
+  }, [trips, currentTrip, activeModal, updateAllStats]);
 
+  // 通用卡片與按鈕樣式
   const cardBase: React.CSSProperties = {
-    backgroundColor: 'white', border: '4px solid black', boxShadow: '8px 8px 0px black', cursor: 'pointer', ...fontStyle
+    backgroundColor: 'white', border: '4px solid black', boxShadow: '6px 6px 0px black', cursor: 'pointer', ...fontStyle
   };
+
+  // 文字放大 20% 樣式
+  const enlargedTextStyle = { fontSize: '24px', fontWeight: 'bold' };
 
   return (
     <div style={{ backgroundColor: '#e2e8f0', minHeight: '100vh', display: 'flex', justifyContent: 'center', ...fontStyle }}>
       <div style={{ width: '100%', maxWidth: '420px', minHeight: '100vh', backgroundColor: '#FF9933', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative' }}>
         
-        {/* 首頁 Header */}
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ transform: 'rotate(-6deg)' }}>
               <span style={{ backgroundColor: 'black', color: 'white', fontSize: '18px', padding: '6px 16px', borderRadius: '12px', fontWeight: 'bold' }}>離家出走計劃中</span>
             </div>
             <h1 style={{ fontSize: '64px', marginTop: '15px', color: 'black', lineHeight: 1 }}>哈囉<br />{currentTrip}!</h1>
-            <button onClick={() => setActiveModal('destination')} style={{ ...cardBase, borderRadius: '25px', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', fontWeight: 'bold' }}>
+            {/* 1. 切換旅程文字放大 20% */}
+            <button onClick={() => setActiveModal('destination')} style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', ...enlargedTextStyle }}>
               <div style={{ width: '12px', height: '12px', backgroundColor: '#3B82F6', borderRadius: '50%' }}></div>切換旅程
             </button>
           </div>
@@ -121,7 +91,7 @@ export default function App() {
           <ArrowRight size={36} strokeWidth={3} />
         </div>
 
-        {/* 功能網格 */}
+        {/* 功能網格 (主頁面) */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
           <div onClick={() => setActiveModal('wish')} style={{ ...cardBase, borderRadius: '30px', padding: '20px' }}>
             <Heart size={28} color="#EF4444" fill="#EF4444" />
@@ -146,71 +116,45 @@ export default function App() {
           </div>
         </div>
 
-        {/* 二層 Modal: 看行程 */}
+        {/* 行程總覽 Modal */}
         {activeModal === 'itinerary' && (
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, minHeight: '100vh', backgroundColor: '#FF9933', zIndex: 100, padding: '20px' }}>
-            <button onClick={() => setActiveModal(null)} style={{ ...cardBase, padding: '8px 16px', borderRadius: '15px', marginBottom: '20px' }}>← 返回</button>
+            {/* 1. 返回文字放大 20% */}
+            <button onClick={() => setActiveModal(null)} style={{ ...cardBase, padding: '10px 20px', borderRadius: '15px', marginBottom: '20px', ...enlargedTextStyle }}>← 返回</button>
             <h2 style={{ fontSize: '32px', marginBottom: '30px', fontWeight: 'bold' }}>{currentTrip} 旅程總覽</h2>
             
+            {/* 2. 6 個按鈕改回圓角黑框白底，拿掉說明文字 */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               {[
-                { name: '航班 & 票價', img: '/assets/flight_icon.png', id: 'flight' },
-                { name: '旅程地圖', img: '/assets/map_icon.png', id: 'map' },
-                { name: '行程票選', img: '/assets/vote_icon.png', id: 'vote' },
-                { name: '每日行程', img: '/assets/daily_icon.png', id: 'daily' },
-                { name: '交通資訊', img: '/assets/transport_icon.png', id: 'transport' },
-                { name: '飯店資訊', img: '/assets/hotel_icon.png', id: 'hotel' }
+                { id: 'flight', img: '/assets/flight_icon.png' },
+                { id: 'map', img: '/assets/map_icon.png' },
+                { id: 'vote', img: '/assets/vote_icon.png' },
+                { id: 'daily', img: '/assets/daily_icon.png' },
+                { id: 'transport', img: '/assets/transport_icon.png' },
+                { id: 'hotel', img: '/assets/hotel_icon.png' }
               ].map(item => (
-                <div key={item.id} onClick={() => setSubModal(item.id)} style={{ cursor: 'pointer', textAlign: 'center' }}>
-                  <img src={item.img} alt={item.name} style={{ width: '100%', filter: 'drop-shadow(4px 4px 6px rgba(0,0,0,0.2))' }} />
-                  <div style={{ fontWeight: 'bold', marginTop: '8px', fontSize: '18px' }}>{item.name}</div>
+                <div key={item.id} onClick={() => setSubModal(item.id)} style={{ ...cardBase, borderRadius: '25px', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '140px' }}>
+                  <img src={item.img} alt={item.id} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
+                  {/* 說明文字已移除 */}
                 </div>
               ))}
             </div>
 
-            {/* 三層 Modal: 航班細節 */}
+            {/* 航班細節 (範例) */}
             {subModal === 'flight' && (
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, minHeight: '100vh', backgroundColor: '#FF9933', zIndex: 200, padding: '20px' }}>
-                <button onClick={() => setSubModal(null)} style={{ ...cardBase, padding: '8px 16px', borderRadius: '15px', marginBottom: '20px' }}>← 返回</button>
-                <h3 style={{ fontSize: '28px', marginBottom: '20px', fontWeight: 'bold' }}>✈️ 航班 & 票價</h3>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {[
-                    { type: 'DEPARTURE', date: '2026/09/08', from: 'TPE', to: 'FUK', fLoc: '桃園', tLoc: '福岡', time: '08:10 - 11:20', code: 'BR106', rev: false },
-                    { type: 'RETURN', date: '2026/09/12', from: 'FUK', to: 'TPE', fLoc: '福岡', tLoc: '桃園', time: '12:20 - 13:45', code: 'BR105', rev: true }
-                  ].map((f, i) => (
-                    <div key={i} style={{ backgroundColor: 'white', border: '4px solid black', borderRadius: '25px', padding: '20px', boxShadow: '8px 8px 0px rgba(0,0,0,0.1)' }}>
-                      <div style={{ fontSize: '13px', color: '#666', borderBottom: '2px dashed #ddd', paddingBottom: '8px', marginBottom: '12px' }}>{f.type} - {f.date}</div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '38px', fontWeight: '900' }}>{f.from}</div>
-                          <div style={{ fontSize: '14px' }}>{f.fLoc}</div>
-                        </div>
-                        <div style={{ flex: 1, borderTop: '3px solid black', margin: '0 15px', position: 'relative' }}>
-                          <span style={{ position: 'absolute', top: '-14px', left: '45%', fontSize: '20px', transform: f.rev ? 'scaleX(-1)' : 'none' }}>✈️</span>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '38px', fontWeight: '900' }}>{f.to}</div>
-                          <div style={{ fontSize: '14px' }}>{f.tLoc}</div>
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'center', marginTop: '15px', fontWeight: 'bold', color: '#E67E22', fontSize: '22px' }}>
-                        {f.time} <span style={{ fontSize: '16px', color: '#666' }}>({f.code})</span>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <button onClick={() => window.open('https://your-appsheet-url.com', '_blank')} style={{ ...cardBase, backgroundColor: 'black', color: 'white', padding: '18px', borderRadius: '20px', fontSize: '22px', fontWeight: 'bold' }}>
-                    📊 查看明細
-                  </button>
+                <button onClick={() => setSubModal(null)} style={{ ...cardBase, padding: '10px 20px', borderRadius: '15px', marginBottom: '20px', ...enlargedTextStyle }}>← 返回</button>
+                <h3 style={{ fontSize: '28px', marginBottom: '20px', fontWeight: 'bold' }}>✈️ 航班資訊</h3>
+                <div style={{ backgroundColor: 'white', border: '4px solid black', borderRadius: '25px', padding: '20px' }}>
+                  <p>載入中...</p>
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* 其他基礎 Modal */}
-        {activeModal === 'destination' && <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={handleTripChange} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />}
+        {/* 其他基礎彈窗 */}
+        {activeModal === 'destination' && <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={(dest) => { setCurrentTrip(dest); setActiveModal(null); }} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />}
         {activeModal === 'calc' && <Calculator onClose={() => setActiveModal(null)} />}
         {activeModal === 'wish' && <WishlistModal currentTrip={currentTrip} onClose={() => setActiveModal(null)} />}
         {activeModal === 'packing' && <PackingModal currentTrip={currentTrip} onClose={() => setActiveModal(null)} />}

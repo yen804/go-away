@@ -2,15 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Map, Heart, Luggage, Calculator as CalcIcon, ArrowRight } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// 子組件引入 (保持原始結構)
+// 子組件引入
 import Calculator from './components/Calculator';
 import PackingModal from './components/PackingModal';
 import WishlistModal from './components/WishlistModal';
 import DestinationModal from './components/DestinationModal';
 import BuyBuyBuyModal from './components/BuyBuyBuyModal';
 import ToolModal from './components/ToolModal';
+import ItineraryModal from './components/ItineraryModal'; // 新增引入
 
-// 初始化 Supabase
+// 初始化 Supabase (保持原始配置)
 const supabase = createClient(
   'https://zjcdhfafehcbbiljevoi.supabase.co', 
   'sb_publishable_8f530wHsNhiv4O7JZ--O7Q_IolVAPyF'
@@ -24,7 +25,7 @@ const getDeviceLabel = () => {
 };
 
 export default function App() {
-  // --- 狀態管理 ---
+  // --- 狀態管理 (保持原始結構) ---
   const [trips, setTrips] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('travel_trips') || '["KYUSHU", "TAIWAN", "CHUPEI"]');
@@ -41,7 +42,7 @@ export default function App() {
     fontFamily: 'MORITAD, "PingFang TC", "Hiragino Sans GB", "Heiti TC", "Microsoft JhengHei", sans-serif' 
   };
 
-  // --- 核心同步邏輯 ---
+  // --- 核心同步邏輯 (保持原始邏輯) ---
   const fetchLatestStatus = useCallback(async () => {
     if (!navigator.onLine) return;
     try {
@@ -101,20 +102,11 @@ export default function App() {
     backgroundColor: 'white', border: '4px solid black', boxShadow: '8px 8px 0px black', cursor: 'pointer', ...fontStyle
   };
 
-  // 處理 6 大按鈕點擊
-  const handleSubButtonClick = (id: string) => {
-    if (id === 'flight') {
-      window.open('https://www.appsheet.com/start/6a31ffaf-6bdb-4b55-af3f-1aa6be918736', '_blank');
-    } else {
-      setSubModal(id);
-    }
-  };
-
   return (
     <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', width: '100vw', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '20px 0', ...fontStyle, overflowX: 'hidden' }}>
       <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px', padding: '0 20px' }}>
         
-        {/* Header (保持原始 UI) */}
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '20px' }}>
           <div style={{ textAlign: 'left' }}>
             <div style={{ display: 'inline-block', transform: 'rotate(-6deg)', transformOrigin: 'left bottom' }}>
@@ -125,7 +117,7 @@ export default function App() {
             <h1 style={{ fontSize: '64px', marginTop: '8px', marginBottom: '20px', lineHeight: 1, color: 'black', transform: 'rotate(-2deg)' }}>
               哈囉<br /><span style={{ display: 'block', marginTop: '15px' }}>{currentTrip}!</span>
             </h1>
-            <button onClick={() => setActiveModal('destination')} style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '24px', fontWeight: 'bold', border: '5px solid black' }}>
+            <button onClick={() => setActiveModal('destination')} style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', fontSize: '24px', fontWeight: 'bold', border: '5px solid black' }}>
               <div style={{ width: '14px', height: '14px', backgroundColor: '#3B82F6', borderRadius: '50%' }}></div>
               切換旅程
             </button>
@@ -144,7 +136,7 @@ export default function App() {
           <ArrowRight size={40} strokeWidth={4} />
         </div>
 
-        {/* 功能 Grid (保持原始邏輯) */}
+        {/* 功能 Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
           <div onClick={() => setActiveModal('wish')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(-1.5deg)' }}>
             <Heart size={30} color="#EF4444" fill="#EF4444" />
@@ -168,43 +160,20 @@ export default function App() {
           </div>
         </div>
 
-        {/* 行程總覽 Modal */}
+        {/* --- Modals 區塊 --- */}
+        
+        {/* 1. 旅程總覽 (使用新抽離的組件) */}
         {activeModal === 'itinerary' && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#FF9933', zIndex: 100, overflowY: 'auto' }}>
-            <div style={{ maxWidth: '420px', margin: '0 auto', padding: '20px' }}>
-              <button onClick={() => setActiveModal(null)} style={{ ...cardBase, padding: '10px 24px', borderRadius: '15px', marginBottom: '20px', fontSize: '24px', fontWeight: 'bold' }}>← 返回</button>
-              <h2 style={{ fontSize: '32px', marginBottom: '30px', fontWeight: 'bold' }}>{currentTrip} 旅程總覽</h2>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                {[
-                  { id: 'flight', src: '/assets/flight_icon.png' },
-                  { id: 'map', src: '/assets/map_icon.png' },
-                  { id: 'vote', src: '/assets/vote_icon.png' },
-                  { id: 'daily', src: '/assets/daily_icon.png' },
-                  { id: 'transport', src: '/assets/transport_icon.png' },
-                  { id: 'hotel', src: '/assets/hotel_icon.png' }
-                ].map(item => (
-                  <div key={item.id} onClick={() => handleSubButtonClick(item.id)} style={{ ...cardBase, borderRadius: '25px', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '150px' }}>
-                    <img src={item.src} alt={item.id} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            {subModal && (
-              <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#FF9933', zIndex: 200, overflowY: 'auto' }}>
-                <div style={{ maxWidth: '420px', margin: '0 auto', padding: '20px' }}>
-                  <button onClick={() => setSubModal(null)} style={{ ...cardBase, padding: '10px 24px', borderRadius: '15px', marginBottom: '20px', fontSize: '24px', fontWeight: 'bold' }}>← 返回</button>
-                  <div style={{ ...cardBase, borderRadius: '25px', padding: '20px', textAlign: 'center' }}>
-                    <h3 style={{ fontSize: '24px', fontWeight: 'bold' }}>內容整理中...</h3>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <ItineraryModal 
+            currentTrip={currentTrip} 
+            onClose={() => setActiveModal(null)} 
+            subModal={subModal} 
+            setSubModal={setSubModal} 
+            cardBase={cardBase} 
+          />
         )}
 
-        {/* 其餘子 Modal */}
+        {/* 2. 其他原有 Modal */}
         {activeModal === 'destination' && <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={(d) => { setCurrentTrip(d); syncToCloud(d); setActiveModal(null); }} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />}
         {activeModal === 'calc' && <Calculator onClose={() => setActiveModal(null)} />}
         {activeModal === 'wish' && <WishlistModal currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}

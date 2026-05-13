@@ -9,9 +9,8 @@ import WishlistModal from './components/WishlistModal';
 import DestinationModal from './components/DestinationModal';
 import BuyBuyBuyModal from './components/BuyBuyBuyModal';
 import ToolModal from './components/ToolModal';
-import ItineraryModal from './components/Itinerary/ItineraryModal'; // 新增引入
+import ItineraryModal from './components/Itinerary/ItineraryModal'; // 修正後的正確路徑
 
-// 初始化 Supabase (保持原始配置)
 const supabase = createClient(
   'https://zjcdhfafehcbbiljevoi.supabase.co', 
   'sb_publishable_8f530wHsNhiv4O7JZ--O7Q_IolVAPyF'
@@ -25,7 +24,6 @@ const getDeviceLabel = () => {
 };
 
 export default function App() {
-  // --- 狀態管理 (保持原始結構) ---
   const [trips, setTrips] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('travel_trips') || '["KYUSHU", "TAIWAN", "CHUPEI"]');
@@ -42,7 +40,6 @@ export default function App() {
     fontFamily: 'MORITAD, "PingFang TC", "Hiragino Sans GB", "Heiti TC", "Microsoft JhengHei", sans-serif' 
   };
 
-  // --- 核心同步邏輯 (保持原始邏輯) ---
   const fetchLatestStatus = useCallback(async () => {
     if (!navigator.onLine) return;
     try {
@@ -118,7 +115,7 @@ export default function App() {
               哈囉<br /><span style={{ display: 'block', marginTop: '15px' }}>{currentTrip}!</span>
             </h1>
             <button onClick={() => setActiveModal('destination')} style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', fontSize: '24px', fontWeight: 'bold', border: '5px solid black' }}>
-              <div style={{ width: '14px', height: '14px', backgroundColor: '#3B82F6', borderRadius: '50%' }}></div>
+              <div style={{ width: '14px', height: '14px', backgroundColor: '#3B82F6', borderRadius: '50%', display: 'inline-block', marginRight: '10px' }}></div>
               切換旅程
             </button>
           </div>
@@ -127,7 +124,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* 看行程主按鈕 */}
+        {/* 行程主按鈕 */}
         <div onClick={() => setActiveModal('itinerary')} style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div style={{ backgroundColor: 'black', padding: '12px', borderRadius: '50%', display: 'flex' }}><Map color="white" size={32} /></div>
@@ -160,9 +157,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* --- Modals 區塊 --- */}
-        
-        {/* 1. 旅程總覽 (使用新抽離的組件) */}
+        {/* Modal 渲染 */}
         {activeModal === 'itinerary' && (
           <ItineraryModal 
             currentTrip={currentTrip} 
@@ -173,7 +168,6 @@ export default function App() {
           />
         )}
 
-        {/* 2. 其他原有 Modal */}
         {activeModal === 'destination' && <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={(d) => { setCurrentTrip(d); syncToCloud(d); setActiveModal(null); }} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />}
         {activeModal === 'calc' && <Calculator onClose={() => setActiveModal(null)} />}
         {activeModal === 'wish' && <WishlistModal currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}

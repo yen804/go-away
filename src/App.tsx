@@ -33,6 +33,7 @@ export default function App() {
   
   const [currentTrip, setCurrentTrip] = useState(() => localStorage.getItem('current_trip') || 'KYUSHU');
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [subModal, setSubModal] = useState<string | null>(null);
   const [wishStats, setWishStats] = useState({ total: 0, todo: 0 });
   const [buyStats, setBuyStats] = useState({ total: 0, todo: 0 });
   const [packingProgress, setPackingProgress] = useState(0);
@@ -41,12 +42,10 @@ export default function App() {
     fontFamily: 'MORITAD, "PingFang TC", "Hiragino Sans GB", "Heiti TC", "Microsoft JhengHei", sans-serif' 
   };
 
-  // --- 核心同步邏輯 ---
   const fetchLatestStatus = useCallback(async () => {
     if (!navigator.onLine) return;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000); 
-
     try {
       const { data, error } = await supabase
         .from('Go_Away')
@@ -54,27 +53,19 @@ export default function App() {
         .order('created_at', { ascending: false })
         .limit(1)
         .abortSignal(controller.signal);
-
       if (!error && data && data.length > 0) {
-        const lastAction = data[0];
-        if (lastAction.name !== currentTrip) {
-          setCurrentTrip(lastAction.name);
-          localStorage.setItem('current_trip', lastAction.name);
+        if (data[0].name !== currentTrip) {
+          setCurrentTrip(data[0].name);
+          localStorage.setItem('current_trip', data[0].name);
         }
       }
-    } catch (e) {
-      console.warn("同步超時");
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    } catch (e) { console.warn("同步超時"); } finally { clearTimeout(timeoutId); }
   }, [currentTrip]);
 
   const syncToCloud = async (tripName: string) => {
     if (!navigator.onLine) return;
     try {
-      await supabase.from('Go_Away').insert([
-        { name: tripName, category: '旅程切換', device: getDeviceLabel(), is_checked: false, created_at: new Date().toISOString() }
-      ]);
+      await supabase.from('Go_Away').insert([{ name: tripName, category: '旅程切換', device: getDeviceLabel(), is_checked: false, created_at: new Date().toISOString() }]);
     } catch (e) { console.error("雲端寫入失敗"); }
   };
 
@@ -102,15 +93,13 @@ export default function App() {
       const wishAll = wishRaw ? JSON.parse(wishRaw) : [];
       if (Array.isArray(wishAll)) {
         const currentItems = wishAll.filter((i: any) => i.trip === currentTrip);
-        const done = currentItems.filter((i: any) => i.completed).length;
-        setWishStats({ total: currentItems.length, todo: currentItems.length - done });
+        setWishStats({ total: currentItems.length, todo: currentItems.length - currentItems.filter((i: any) => i.completed).length });
       }
       const buyRaw = localStorage.getItem('buy_buy_buy_v10');
       const buyAll = buyRaw ? JSON.parse(buyRaw) : [];
       if (Array.isArray(buyAll)) {
         const currentItems = buyAll.filter((i: any) => i.trip === currentTrip);
-        const done = currentItems.filter((i: any) => i.completed).length;
-        setBuyStats({ total: currentItems.length, todo: currentItems.length - done });
+        setBuyStats({ total: currentItems.length, todo: currentItems.length - currentItems.filter((i: any) => i.completed).length });
       }
       const packingRaw = localStorage.getItem(`packing_${currentTrip}`);
       const packingData = packingRaw ? JSON.parse(packingRaw) : [];
@@ -126,28 +115,22 @@ export default function App() {
   };
 
   return (
-    <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', ...fontStyle }}>
-      <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ backgroundColor: '#e2e8f0', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0', margin: '0', ...fontStyle }}>
+      {/* 1. 電腦版版面固定容器 */}
+      <div style={{ width: '100%', maxWidth: '420px', minHeight: '100vh', backgroundColor: '#FF9933', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative', boxShadow: '0 0 50px rgba(0,0,0,0.1)' }}>
         
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ textAlign: 'left' }}>
             <div style={{ display: 'inline-block', transform: 'rotate(-6deg)', transformOrigin: 'left bottom' }}>
-              <span style={{ backgroundColor: 'black', color: 'white', fontSize: '18px', padding: '6px 16px', borderRadius: '12px', letterSpacing: '2px', fontWeight: 'bold' }}>
-                離家出走計劃中
-              </span>
+              <span style={{ backgroundColor: 'black', color: 'white', fontSize: '18px', padding: '6px 16px', borderRadius: '12px', letterSpacing: '2px', fontWeight: 'bold' }}>離家出走計劃中</span>
             </div>
-            <h1 style={{ fontSize: '64px', marginTop: '8px', marginBottom: '20px', lineHeight: 1, color: 'black', transform: 'rotate(-2deg)' }}>
-              哈囉<br /><span style={{ display: 'block', marginTop: '15px' }}>{currentTrip}!</span>
-            </h1>
+            <h1 style={{ fontSize: '64px', marginTop: '8px', marginBottom: '20px', lineHeight: 1, color: 'black', transform: 'rotate(-2deg)' }}>哈囉<br /><span style={{ display: 'block', marginTop: '15px' }}>{currentTrip}!</span></h1>
             <button onClick={() => setActiveModal('destination')} style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px', fontWeight: 'bold', border: '5px solid black' }}>
-              <div style={{ width: '14px', height: '14px', backgroundColor: '#3B82F6', borderRadius: '50%' }}></div>
-              切換旅程
+              <div style={{ width: '14px', height: '14px', backgroundColor: '#3B82F6', borderRadius: '50%' }}></div>切換旅程
             </button>
           </div>
-          <div onClick={() => setActiveModal('calc')} style={{ ...cardBase, padding: '15px', borderRadius: '25px', display: 'flex' }}>
-            <CalcIcon size={32} strokeWidth={3} />
-          </div>
+          <div onClick={() => setActiveModal('calc')} style={{ ...cardBase, padding: '15px', borderRadius: '25px', display: 'flex' }}><CalcIcon size={32} strokeWidth={3} /></div>
         </div>
 
         {/* 看行程主按鈕 */}
@@ -159,98 +142,98 @@ export default function App() {
           <ArrowRight size={40} strokeWidth={4} />
         </div>
 
-        {/* 次要功能區 */}
+        {/* 其餘原功能區塊 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
           <div onClick={() => setActiveModal('wish')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(-1.5deg)' }}>
             <Heart size={30} color="#EF4444" fill="#EF4444" />
             <p style={{ fontSize: '22px', margin: '10px 0 0 0', fontWeight: 'bold' }}>許願清單</p>
-            <div style={{ fontSize: '14px', backgroundColor: 'black', color: 'white', padding: '2px 10px', borderRadius: '10px', marginTop: '8px', display: 'inline-block', fontWeight: '900' }}>
-              {wishStats.todo} / {wishStats.total}
-            </div>
+            <div style={{ fontSize: '14px', backgroundColor: 'black', color: 'white', padding: '2px 10px', borderRadius: '10px', marginTop: '8px', display: 'inline-block', fontWeight: '900' }}>{wishStats.todo} / {wishStats.total}</div>
           </div>
           <div onClick={() => setActiveModal('packing')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(1.2deg)' }}>
             <Luggage size={30} color="#3B82F6" />
             <p style={{ fontSize: '22px', margin: '10px 0 5px 0', fontWeight: 'bold' }}>行李檢查</p>
-            <div style={{ width: '100%', height: '8px', backgroundColor: '#EEE', border: '2px solid black', borderRadius: '5px', overflow: 'hidden' }}>
-              <div style={{ width: `${packingProgress}%`, height: '100%', backgroundColor: '#10B981' }}></div>
-            </div>
+            <div style={{ width: '100%', height: '8px', backgroundColor: '#EEE', border: '2px solid black', borderRadius: '5px', overflow: 'hidden' }}><div style={{ width: `${packingProgress}%`, height: '100%', backgroundColor: '#10B981' }}></div></div>
           </div>
           <div onClick={() => setActiveModal('buy')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(1deg)' }}>
             <ShoppingBag size={30} color="#F97316" />
             <p style={{ fontSize: '22px', margin: '10px 0 0 0', fontWeight: 'bold' }}>必買好物</p>
-            <div style={{ fontSize: '14px', backgroundColor: 'black', color: 'white', padding: '2px 10px', borderRadius: '10px', marginTop: '8px', display: 'inline-block', fontWeight: '900' }}>
-              {buyStats.todo} / {buyStats.total}
-            </div>
+            <div style={{ fontSize: '14px', backgroundColor: 'black', color: 'white', padding: '2px 10px', borderRadius: '10px', marginTop: '8px', display: 'inline-block', fontWeight: '900' }}>{buyStats.todo} / {buyStats.total}</div>
           </div>
           <div onClick={() => setActiveModal('tools')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(-1deg)' }}>
             <Wrench size={30} color="#6B7280" />
             <p style={{ fontSize: '22px', marginTop: '10px', marginBottom: 0, fontWeight: 'bold' }}>工具箱</p>
           </div>
         </div>
+
+        {/* 二層頁面：看行程 (6 個圖片按鈕) */}
+        {activeModal === 'itinerary' && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, minHeight: '100vh', backgroundColor: 'white', zIndex: 100, padding: '20px', ...fontStyle }}>
+            <button onClick={() => setActiveModal(null)} style={{ ...cardBase, padding: '10px 20px', borderRadius: '15px', marginBottom: '20px' }}>← 返回</button>
+            <h2 style={{ fontSize: '32px', marginBottom: '30px', fontWeight: '900' }}>{currentTrip} 旅程總覽</h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              {[
+                { name: '航班 & 票價', img: './assets/flight_icon.png', key: 'flight' },
+                { name: '旅程地圖', img: './assets/map_icon.png', key: 'map' },
+                { name: '行程票選', img: './assets/vote_icon.png', key: 'vote' },
+                { name: '每日行程', img: './assets/daily_icon.png', key: 'daily' },
+                { name: '交通資訊', img: './assets/transport_icon.png', key: 'transport' },
+                { name: '飯店資訊', img: './assets/hotel_icon.png', key: 'hotel' }
+              ].map(item => (
+                <div key={item.key} onClick={() => setSubModal(item.key)} style={{ cursor: 'pointer', textAlign: 'center' }}>
+                  {/* 無外框、右下陰影的圖片按鈕 */}
+                  <img src={item.img} alt={item.name} style={{ width: '100%', borderRadius: '20px', boxShadow: '6px 6px 15px rgba(0,0,0,0.1)' }} />
+                  <div style={{ fontWeight: 'bold', marginTop: '8px', fontSize: '18px' }}>{item.name}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* 三層頁面：航班頁面 */}
+            {subModal === 'flight' && (
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, minHeight: '100vh', backgroundColor: '#F8F9FA', zIndex: 200, padding: '20px' }}>
+                <button onClick={() => setSubModal(null)} style={{ ...cardBase, padding: '10px 20px', borderRadius: '15px', marginBottom: '20px' }}>← 返回模組</button>
+                <h3 style={{ fontSize: '28px', marginBottom: '25px', fontWeight: '900' }}>✈️ 航班 & 票價</h3>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {/* 去程機票卡 (帶陰影) */}
+                  <div style={{ backgroundColor: 'white', border: '3px solid black', borderRadius: '25px', padding: '18px', boxShadow: '8px 8px 15px rgba(0,0,0,0.08)' }}>
+                    <div style={{ fontSize: '12px', color: '#666', borderBottom: '1px dashed #DDD', paddingBottom: '8px', marginBottom: '12px' }}>DEPARTURE - 2026/09/08</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ textAlign: 'center' }}><div style={{ fontSize: '28px', fontWeight: '900' }}>TPE</div><div style={{ fontSize: '12px' }}>桃園</div></div>
+                      <div style={{ flex: 1, borderTop: '2px solid black', margin: '0 15px', position: 'relative' }}><span style={{ position: 'absolute', top: '-14px', left: '42%', fontSize: '20px' }}>✈️</span></div>
+                      <div style={{ textAlign: 'center' }}><div style={{ fontSize: '28px', fontWeight: '900' }}>FUK</div><div style={{ fontSize: '12px' }}>福岡</div></div>
+                    </div>
+                    <div style={{ textAlign: 'center', marginTop: '15px', fontWeight: 'bold', color: '#FF9933', fontSize: '18px' }}>08:10 - 11:20 (BR106)</div>
+                  </div>
+
+                  {/* 回程機票卡 (帶陰影) */}
+                  <div style={{ backgroundColor: 'white', border: '3px solid black', borderRadius: '25px', padding: '18px', boxShadow: '8px 8px 15px rgba(0,0,0,0.08)' }}>
+                    <div style={{ fontSize: '12px', color: '#666', borderBottom: '1px dashed #DDD', paddingBottom: '8px', marginBottom: '12px' }}>RETURN - 2026/09/12</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ textAlign: 'center' }}><div style={{ fontSize: '28px', fontWeight: '900' }}>FUK</div><div style={{ fontSize: '12px' }}>福岡</div></div>
+                      <div style={{ flex: 1, borderTop: '2px solid black', margin: '0 15px', position: 'relative' }}><span style={{ position: 'absolute', top: '-14px', left: '42%', fontSize: '20px', transform: 'scaleX(-1)' }}>✈️</span></div>
+                      <div style={{ textAlign: 'center' }}><div style={{ fontSize: '28px', fontWeight: '900' }}>TPE</div><div style={{ fontSize: '12px' }}>桃園</div></div>
+                    </div>
+                    <div style={{ textAlign: 'center', marginTop: '15px', fontWeight: 'bold', color: '#FF9933', fontSize: '18px' }}>12:20 - 13:45 (BR105)</div>
+                  </div>
+                  
+                  <button onClick={() => window.open('YOUR_APPSHEET_URL', '_blank')} style={{ ...cardBase, backgroundColor: 'black', color: 'white', padding: '20px', borderRadius: '25px', fontSize: '22px', fontWeight: 'bold' }}>
+                    📊 查看票價明細
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 其他 Modal 渲染 */}
+        {activeModal === 'destination' && <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={handleTripChange} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />}
+        {activeModal === 'calc' && <Calculator onClose={() => setActiveModal(null)} />}
+        {activeModal === 'wish' && <WishlistModal currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}
+        {activeModal === 'packing' && <PackingModal currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}
+        {activeModal === 'buy' && <BuyBuyBuyModal isOpen={true} currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}
+        {activeModal === 'tools' && <ToolModal onClose={() => setActiveModal(null)} />}
       </div>
-
-      {/* 彈窗渲染 */}
-      {activeModal === 'destination' && <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={handleTripChange} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />}
-      {activeModal === 'calc' && <Calculator onClose={() => setActiveModal(null)} />}
-      {activeModal === 'wish' && <WishlistModal currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}
-      {activeModal === 'packing' && <PackingModal currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}
-      {activeModal === 'buy' && <BuyBuyBuyModal isOpen={true} currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}
-      {activeModal === 'tools' && <ToolModal onClose={() => setActiveModal(null)} />}
-
-      {/* 看行程二層頁面 */}
-      {activeModal === 'itinerary' && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#F8F9FA', zIndex: 1000, padding: '20px', overflowY: 'auto', ...fontStyle }}>
-          <button onClick={() => setActiveModal(null)} style={{ ...cardBase, padding: '10px 20px', borderRadius: '15px', marginBottom: '20px' }}>← 返回</button>
-          
-          <h2 style={{ fontSize: '32px', marginBottom: '20px', fontWeight: '900' }}>{currentTrip} 旅程總覽</h2>
-
-          {/* 航班卡片區 */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '30px' }}>
-            {/* 去程 */}
-            <div style={{ backgroundColor: 'white', border: '3px solid black', borderRadius: '25px', padding: '15px' }}>
-              <div style={{ fontSize: '12px', color: '#666', borderBottom: '1px dashed #DDD', paddingBottom: '5px', marginBottom: '10px' }}>DEPARTURE - 2026/09/08</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ textAlign: 'center' }}><div style={{ fontSize: '24px', fontWeight: '900' }}>TPE</div><div style={{ fontSize: '12px' }}>桃園</div></div>
-                <div style={{ flex: 1, borderTop: '2px solid black', margin: '0 10px', position: 'relative' }}><span style={{ position: 'absolute', top: '-12px', left: '40%' }}>✈️</span></div>
-                <div style={{ textAlign: 'center' }}><div style={{ fontSize: '24px', fontWeight: '900' }}>FUK</div><div style={{ fontSize: '12px' }}>福岡</div></div>
-              </div>
-              <div style={{ textAlign: 'center', marginTop: '10px', fontWeight: 'bold', color: '#FF9933' }}>08:10 - 11:20 (BR106)</div>
-            </div>
-
-            {/* 回程 */}
-            <div style={{ backgroundColor: 'white', border: '3px solid black', borderRadius: '25px', padding: '15px' }}>
-              <div style={{ fontSize: '12px', color: '#666', borderBottom: '1px dashed #DDD', paddingBottom: '5px', marginBottom: '10px' }}>RETURN - 2026/09/12</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ textAlign: 'center' }}><div style={{ fontSize: '24px', fontWeight: '900' }}>FUK</div><div style={{ fontSize: '12px' }}>福岡</div></div>
-                <div style={{ flex: 1, borderTop: '2px solid black', margin: '0 10px', position: 'relative' }}><span style={{ position: 'absolute', top: '-12px', left: '40%', transform: 'scaleX(-1)' }}>✈️</span></div>
-                <div style={{ textAlign: 'center' }}><div style={{ fontSize: '24px', fontWeight: '900' }}>TPE</div><div style={{ fontSize: '12px' }}>桃園</div></div>
-              </div>
-              <div style={{ textAlign: 'center', marginTop: '10px', fontWeight: 'bold', color: '#FF9933' }}>12:20 - 13:45 (BR105)</div>
-            </div>
-
-            <button onClick={() => window.open('YOUR_APPSHEET_URL', '_blank')} style={{ ...cardBase, backgroundColor: 'black', color: 'white', padding: '15px', borderRadius: '20px', fontSize: '18px', fontWeight: 'bold' }}>
-              📊 查看 10 人票價明細 (AppSheet)
-            </button>
-          </div>
-
-          {/* 六大架構模組 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', paddingBottom: '40px' }}>
-            {[
-              { name: '航班 & 票價', icon: '🎫' },
-              { name: '旅程地圖', icon: '🗺️' },
-              { name: '行程票選', icon: '🗳️' },
-              { name: '每日行程', icon: '📅' },
-              { name: '交通資訊', icon: '🚌' },
-              { name: '飯店資訊', icon: '🏨' }
-            ].map(item => (
-              <div key={item.name} style={{ ...cardBase, padding: '20px', borderRadius: '25px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                <div style={{ fontSize: '32px' }}>{item.icon}</div>
-                <div style={{ fontWeight: 'bold' }}>{item.name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

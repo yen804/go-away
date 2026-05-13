@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Map, Heart, Luggage, Calculator as CalcIcon, ArrowRight } from 'lucide-react';
+import { Map, Heart, Luggage, ShoppingBag, Calculator as CalcIcon, ArrowRight, Wrench } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
 // 子組件引入
 import Calculator from './components/Calculator';
@@ -9,7 +10,21 @@ import DestinationModal from './components/DestinationModal';
 import BuyBuyBuyModal from './components/BuyBuyBuyModal';
 import ToolModal from './components/ToolModal';
 
+// 初始化 Supabase
+const supabase = createClient(
+  'https://zjcdhfafehcbbiljevoi.supabase.co', 
+  'sb_publishable_8f530wHsNhiv4O7JZ--O7Q_IolVAPyF'
+);
+
+const getDeviceLabel = () => {
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/i.test(ua)) return "家人iPhone";
+  if (/Android/i.test(ua)) return "家人Android";
+  return "主控電腦";
+};
+
 export default function App() {
+  // --- 狀態管理 ---
   const [trips, setTrips] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('travel_trips') || '["KYUSHU", "TAIWAN", "CHUPEI"]');
@@ -18,126 +33,199 @@ export default function App() {
   
   const [currentTrip, setCurrentTrip] = useState(() => localStorage.getItem('current_trip') || 'KYUSHU');
   const [activeModal, setActiveModal] = useState<string | null>(null);
-  const [subModal, setSubModal] = useState<string | null>(null);
   const [wishStats, setWishStats] = useState({ total: 0, todo: 0 });
+  const [buyStats, setBuyStats] = useState({ total: 0, todo: 0 });
   const [packingProgress, setPackingProgress] = useState(0);
 
-  const fontStyle = { fontFamily: '"PingFang TC", "Microsoft JhengHei", sans-serif' };
+  // 💡 修正：離線字體防護，指定 MORITAD 並加入高品質備援
+  const fontStyle = { 
+    fontFamily: 'MORITAD, "PingFang TC", "Hiragino Sans GB", "Heiti TC", "Microsoft JhengHei", sans-serif' 
+  };
 
-  const updateAllStats = useCallback(() => {
+  // --- 核心同步邏輯 ---
+
+  const fetchLatestStatus = useCallback(async () => {
+    if (!navigator.onLine) return;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 延長至 3 秒確保穩定
+
     try {
+      // 💡 關鍵：加上 { count: 'exact' } 或隨機參數防止 API 緩存
+      const { data, error } = await supabase
+        .from('Go_Away')
+        .select('name')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .abortSignal(controller.signal);
+
+      if (!error && data && data.length > 0) {
+        const lastAction = data[0];
+        // 只有在雲端名稱與本地不同時，才強制更新本地狀態
+        if (lastAction.name !== currentTrip) {
+          console.log(`📡 同步更新：切換至 ${lastAction.name}`);
+          setCurrentTrip(lastAction.name);
+          localStorage.setItem('current_trip', lastAction.name);
+        }
+      }
+    } catch (e) {
+      console.warn("同步超時，維持現狀");
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }, [currentTrip]);
+
+  const syncToCloud = async (tripName: string) => {
+    if (!navigator.onLine) return;
+
+    try {
+      // 💡 確保寫入時包含所有必要的欄位，避免資料庫因 Not Null 限制而拒絕
+      const { error } = await supabase.from('Go_Away').insert([
+        { 
+          name: tripName, 
+          category: '旅程切換', 
+          device: getDeviceLabel(),
+          is_checked: false,
+          created_at: new Date().toISOString() 
+        }
+      ]);
+      if (error) console.error("雲端寫入失敗:", error.message);
+    } catch (e) {
+      console.error("網路異常，無法寫入雲端");
+    }
+  };
+
+  // 定時器：每 5 秒檢查一次（稍微加快頻率）
+  useEffect(() => {
+    fetchLatestStatus();
+    const interval = setInterval(() => {
+      fetchLatestStatus();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [fetchLatestStatus]);
+
+  const handleTripChange = (dest: string) => {
+    console.log("👆 手動切換旅程為:", dest);
+    setCurrentTrip(dest);
+    localStorage.setItem('current_trip', dest);
+    syncToCloud(dest); // 同步給其他裝置
+    setActiveModal(null);
+  };
+
+  // 數據統計更新
+  useEffect(() => {
+    localStorage.setItem('travel_trips', JSON.stringify(trips));
+    updateAllStats();
+  }, [trips, currentTrip, activeModal]);
+
+  const updateAllStats = () => {
+    try {
+      // 許願清單
       const wishRaw = localStorage.getItem('travel_buys');
       const wishAll = wishRaw ? JSON.parse(wishRaw) : [];
       if (Array.isArray(wishAll)) {
         const currentItems = wishAll.filter((i: any) => i.trip === currentTrip);
-        setWishStats({ total: currentItems.length, todo: currentItems.length - currentItems.filter((i: any) => i.completed).length });
+        const done = currentItems.filter((i: any) => i.completed).length;
+        setWishStats({ total: currentItems.length, todo: currentItems.length - done });
       }
+      // 必買好物
+      const buyRaw = localStorage.getItem('buy_buy_buy_v10');
+      const buyAll = buyRaw ? JSON.parse(buyRaw) : [];
+      if (Array.isArray(buyAll)) {
+        const currentItems = buyAll.filter((i: any) => i.trip === currentTrip);
+        const done = currentItems.filter((i: any) => i.completed).length;
+        setBuyStats({ total: currentItems.length, todo: currentItems.length - done });
+      }
+      // 行李檢查
       const packingRaw = localStorage.getItem(`packing_${currentTrip}`);
       const packingData = packingRaw ? JSON.parse(packingRaw) : [];
       if (Array.isArray(packingData)) {
         const packed = packingData.filter((i: any) => i.packed).length;
         setPackingProgress(packingData.length > 0 ? Math.round((packed / packingData.length) * 100) : 0);
       }
-    } catch (e) { console.error("統計錯誤"); }
-  }, [currentTrip]);
-
-  useEffect(() => {
-    localStorage.setItem('travel_trips', JSON.stringify(trips));
-    updateAllStats();
-  }, [trips, currentTrip, activeModal, updateAllStats]);
+    } catch (e) { console.error("統計資料讀取錯誤"); }
+  };
 
   const cardBase: React.CSSProperties = {
     backgroundColor: 'white', border: '4px solid black', boxShadow: '8px 8px 0px black', cursor: 'pointer', ...fontStyle
   };
 
-  // 文字放大樣式 (24px)
-  const enlargedText: React.CSSProperties = { fontSize: '24px', fontWeight: 'bold' };
-
   return (
-    <div style={{ backgroundColor: '#e2e8f0', minHeight: '100vh', display: 'flex', justifyContent: 'center', ...fontStyle }}>
-      <div style={{ width: '100%', maxWidth: '420px', minHeight: '100vh', backgroundColor: '#FF9933', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative' }}>
+    <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', ...fontStyle }}>
+      <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ transform: 'rotate(-6deg)' }}>
-              <span style={{ backgroundColor: 'black', color: 'white', fontSize: '18px', padding: '6px 16px', borderRadius: '12px', fontWeight: 'bold' }}>離家出走計劃中</span>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ display: 'inline-block', transform: 'rotate(-6deg)', transformOrigin: 'left bottom' }}>
+              <span style={{ backgroundColor: 'black', color: 'white', fontSize: '18px', padding: '6px 16px', borderRadius: '12px', letterSpacing: '2px', fontWeight: 'bold' }}>
+                離家出走計劃中
+              </span>
             </div>
-            <h1 style={{ fontSize: '64px', marginTop: '15px', color: 'black', lineHeight: 1 }}>哈囉<br />{currentTrip}!</h1>
-            <button onClick={() => setActiveModal('destination')} style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', ...enlargedText }}>
-              <div style={{ width: '12px', height: '12px', backgroundColor: '#3B82F6', borderRadius: '50%' }}></div>切換旅程
+            <h1 style={{ fontSize: '64px', marginTop: '8px', marginBottom: '20px', lineHeight: 1, color: 'black', transform: 'rotate(-2deg)' }}>
+              哈囉<br /><span style={{ display: 'block', marginTop: '15px' }}>{currentTrip}!</span>
+            </h1>
+            <button onClick={() => setActiveModal('destination')} style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px', fontWeight: 'bold', border: '5px solid black' }}>
+              <div style={{ width: '14px', height: '14px', backgroundColor: '#3B82F6', borderRadius: '50%' }}></div>
+              切換旅程
             </button>
           </div>
-          <div onClick={() => setActiveModal('calc')} style={{ ...cardBase, padding: '12px', borderRadius: '20px' }}><CalcIcon size={28} /></div>
+          <div onClick={() => setActiveModal('calc')} style={{ ...cardBase, padding: '15px', borderRadius: '25px', display: 'flex' }}>
+            <CalcIcon size={32} strokeWidth={3} />
+          </div>
         </div>
 
-        {/* 看行程主按鈕 */}
-        <div onClick={() => setActiveModal('itinerary')} style={{ ...cardBase, borderRadius: '40px', padding: '25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{ backgroundColor: 'black', padding: '10px', borderRadius: '50%' }}><Map color="white" size={30} /></div>
+        {/* 功能區塊 */}
+        <div style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ backgroundColor: 'black', padding: '12px', borderRadius: '50%', display: 'flex' }}><Map color="white" size={32} /></div>
             <span style={{ fontSize: '32px', fontWeight: 'bold' }}>看行程</span>
           </div>
-          <ArrowRight size={36} strokeWidth={3} />
+          <ArrowRight size={40} strokeWidth={4} />
         </div>
 
-        {/* 首頁 Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-          <div onClick={() => setActiveModal('wish')} style={{ ...cardBase, borderRadius: '30px', padding: '20px' }}>
-            <Heart size={28} color="#EF4444" fill="#EF4444" />
-            <p style={{ fontSize: '20px', marginTop: '10px', fontWeight: 'bold' }}>許願清單</p>
-            <div style={{ backgroundColor: 'black', color: 'white', padding: '2px 8px', borderRadius: '8px', fontSize: '12px', display: 'inline-block' }}>{wishStats.todo} / {wishStats.total}</div>
+          <div onClick={() => setActiveModal('wish')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(-1.5deg)' }}>
+            <Heart size={30} color="#EF4444" fill="#EF4444" />
+            <p style={{ fontSize: '22px', margin: '10px 0 0 0', fontWeight: 'bold' }}>許願清單</p>
+            <div style={{ fontSize: '14px', backgroundColor: 'black', color: 'white', padding: '2px 10px', borderRadius: '10px', marginTop: '8px', display: 'inline-block', fontWeight: '900' }}>
+              {wishStats.todo} / {wishStats.total}
+            </div>
           </div>
-          <div onClick={() => setActiveModal('packing')} style={{ ...cardBase, borderRadius: '30px', padding: '20px' }}>
-            <Luggage size={28} color="#3B82F6" />
-            <p style={{ fontSize: '20px', marginTop: '10px', fontWeight: 'bold' }}>行李檢查</p>
-            <div style={{ width: '100%', height: '6px', backgroundColor: '#EEE', borderRadius: '3px', marginTop: '8px' }}>
+
+          <div onClick={() => setActiveModal('packing')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(1.2deg)' }}>
+            <Luggage size={30} color="#3B82F6" />
+            <p style={{ fontSize: '22px', margin: '10px 0 5px 0', fontWeight: 'bold' }}>行李檢查</p>
+            <div style={{ width: '100%', height: '8px', backgroundColor: '#EEE', border: '2px solid black', borderRadius: '5px', overflow: 'hidden' }}>
               <div style={{ width: `${packingProgress}%`, height: '100%', backgroundColor: '#10B981' }}></div>
             </div>
+            <span style={{ fontSize: '12px', fontWeight: 'bold', marginTop: '4px', display: 'block' }}>進度 {packingProgress}%</span>
+          </div>
+
+          <div onClick={() => setActiveModal('buy')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(1deg)' }}>
+            <ShoppingBag size={30} color="#F97316" />
+            <p style={{ fontSize: '22px', margin: '10px 0 0 0', fontWeight: 'bold' }}>必買好物</p>
+            <div style={{ fontSize: '14px', backgroundColor: 'black', color: 'white', padding: '2px 10px', borderRadius: '10px', marginTop: '8px', display: 'inline-block', fontWeight: '900' }}>
+              {buyStats.todo} / {buyStats.total}
+            </div>
+          </div>
+
+          <div onClick={() => setActiveModal('tools')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(-1deg)' }}>
+            <Wrench size={30} color="#6B7280" />
+            <p style={{ fontSize: '22px', marginTop: '10px', marginBottom: 0, fontWeight: 'bold' }}>工具箱</p>
           </div>
         </div>
-
-        {/* 旅程總覽 Modal */}
-        {activeModal === 'itinerary' && (
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, minHeight: '100vh', backgroundColor: '#FF9933', zIndex: 100, padding: '20px' }}>
-            <button onClick={() => setActiveModal(null)} style={{ ...cardBase, padding: '10px 24px', borderRadius: '15px', marginBottom: '20px', ...enlargedText }}>← 返回</button>
-            <h2 style={{ fontSize: '32px', marginBottom: '30px', fontWeight: 'bold' }}>{currentTrip} 旅程總覽</h2>
-            
-            {/* 6 個按鈕 Grid - 純圖標 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              {[
-                { id: 'flight', img: '/flight_icon.png' },
-                { id: 'map', img: '/map_icon.png' },
-                { id: 'vote', img: '/vote_icon.png' },
-                { id: 'daily', img: '/daily_icon.png' },
-                { id: 'transport', img: '/transport_icon.png' },
-                { id: 'hotel', img: '/hotel_icon.png' }
-              ].map(item => (
-                <div key={item.id} onClick={() => setSubModal(item.id)} style={{ ...cardBase, borderRadius: '25px', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '130px' }}>
-                  <img src={item.img} alt={item.id} style={{ width: '100%', height: 'auto' }} />
-                </div>
-              ))}
-            </div>
-
-            {/* 子層 Modal */}
-            {subModal && (
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, minHeight: '100vh', backgroundColor: '#FF9933', zIndex: 200, padding: '20px' }}>
-                <button onClick={() => setSubModal(null)} style={{ ...cardBase, padding: '10px 24px', borderRadius: '15px', marginBottom: '20px', ...enlargedText }}>← 返回</button>
-                <div style={{ ...cardBase, borderRadius: '25px', padding: '20px' }}>
-                  <h3 style={{ fontSize: '24px', fontWeight: 'bold' }}>詳細資料開發中...</h3>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 基礎彈窗 */}
-        {activeModal === 'destination' && <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={(dest) => { setCurrentTrip(dest); setActiveModal(null); }} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />}
-        {activeModal === 'calc' && <Calculator onClose={() => setActiveModal(null)} />}
-        {activeModal === 'wish' && <WishlistModal currentTrip={currentTrip} onClose={() => setActiveModal(null)} />}
-        {activeModal === 'packing' && <PackingModal currentTrip={currentTrip} onClose={() => setActiveModal(null)} />}
-        {activeModal === 'buy' && <BuyBuyBuyModal isOpen={true} currentTrip={currentTrip} onClose={() => setActiveModal(null)} />}
-        {activeModal === 'tools' && <ToolModal onClose={() => setActiveModal(null)} />}
       </div>
+
+      {/* 彈窗渲染 */}
+      {activeModal === 'destination' && (
+        <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={handleTripChange} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />
+      )}
+      {activeModal === 'calc' && <Calculator onClose={() => setActiveModal(null)} />}
+      {activeModal === 'wish' && <WishlistModal currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}
+      {activeModal === 'packing' && <PackingModal currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}
+      {activeModal === 'buy' && <BuyBuyBuyModal isOpen={true} currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}
+      {activeModal === 'tools' && <ToolModal onClose={() => setActiveModal(null)} />}
     </div>
   );
 }

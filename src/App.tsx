@@ -48,10 +48,10 @@ export default function App() {
     if (!navigator.onLine) return;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000); // 延長至 3 秒確保穩定
+    const timeoutId = setTimeout(() => controller.abort(), 3000); 
 
     try {
-      // 💡 關鍵：加上 { count: 'exact' } 或隨機參數防止 API 緩存
+      // 💡 加上隨機參數防止 API 緩存，確保切換即時
       const { data, error } = await supabase
         .from('Go_Away')
         .select('name')
@@ -61,7 +61,6 @@ export default function App() {
 
       if (!error && data && data.length > 0) {
         const lastAction = data[0];
-        // 只有在雲端名稱與本地不同時，才強制更新本地狀態
         if (lastAction.name !== currentTrip) {
           console.log(`📡 同步更新：切換至 ${lastAction.name}`);
           setCurrentTrip(lastAction.name);
@@ -79,7 +78,7 @@ export default function App() {
     if (!navigator.onLine) return;
 
     try {
-      // 💡 確保寫入時包含所有必要的欄位，避免資料庫因 Not Null 限制而拒絕
+      // 💡 使用本地時間 ISO 字串以符合時區需求
       const { error } = await supabase.from('Go_Away').insert([
         { 
           name: tripName, 
@@ -95,7 +94,7 @@ export default function App() {
     }
   };
 
-  // 定時器：每 5 秒檢查一次（稍微加快頻率）
+  // 定時器：每 5 秒檢查一次
   useEffect(() => {
     fetchLatestStatus();
     const interval = setInterval(() => {
@@ -105,10 +104,9 @@ export default function App() {
   }, [fetchLatestStatus]);
 
   const handleTripChange = (dest: string) => {
-    console.log("👆 手動切換旅程為:", dest);
     setCurrentTrip(dest);
     localStorage.setItem('current_trip', dest);
-    syncToCloud(dest); // 同步給其他裝置
+    syncToCloud(dest); 
     setActiveModal(null);
   };
 
@@ -120,7 +118,6 @@ export default function App() {
 
   const updateAllStats = () => {
     try {
-      // 許願清單
       const wishRaw = localStorage.getItem('travel_buys');
       const wishAll = wishRaw ? JSON.parse(wishRaw) : [];
       if (Array.isArray(wishAll)) {
@@ -128,7 +125,6 @@ export default function App() {
         const done = currentItems.filter((i: any) => i.completed).length;
         setWishStats({ total: currentItems.length, todo: currentItems.length - done });
       }
-      // 必買好物
       const buyRaw = localStorage.getItem('buy_buy_buy_v10');
       const buyAll = buyRaw ? JSON.parse(buyRaw) : [];
       if (Array.isArray(buyAll)) {
@@ -136,7 +132,6 @@ export default function App() {
         const done = currentItems.filter((i: any) => i.completed).length;
         setBuyStats({ total: currentItems.length, todo: currentItems.length - done });
       }
-      // 行李檢查
       const packingRaw = localStorage.getItem(`packing_${currentTrip}`);
       const packingData = packingRaw ? JSON.parse(packingRaw) : [];
       if (Array.isArray(packingData)) {
@@ -175,8 +170,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* 功能區塊 */}
-        <div style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
+        {/* 功能區塊 - 看行程 */}
+        <div onClick={() => setActiveModal('itinerary')} style={{ ...cardBase, borderRadius: '40px', padding: '25px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'rotate(1deg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div style={{ backgroundColor: 'black', padding: '12px', borderRadius: '50%', display: 'flex' }}><Map color="white" size={32} /></div>
             <span style={{ fontSize: '32px', fontWeight: 'bold' }}>看行程</span>
@@ -226,6 +221,14 @@ export default function App() {
       {activeModal === 'packing' && <PackingModal currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}
       {activeModal === 'buy' && <BuyBuyBuyModal isOpen={true} currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}
       {activeModal === 'tools' && <ToolModal onClose={() => setActiveModal(null)} />}
+      {/* 預留看行程彈窗 */}
+      {activeModal === 'itinerary' && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'white', zIndex: 1000, padding: '20px', overflowY: 'auto', ...fontStyle }}>
+           <button onClick={() => setActiveModal(null)} style={{ ...cardBase, padding: '10px 20px', borderRadius: '15px', marginBottom: '20px' }}>返回</button>
+           <h2 style={{ fontSize: '32px' }}>{currentTrip} 行程規劃</h2>
+           <p>行程內容正在架構中...</p>
+        </div>
+      )}
     </div>
   );
 }

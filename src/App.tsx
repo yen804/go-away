@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Map, Heart, Luggage, Calculator as CalcIcon, ArrowRight } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// 子組件引入
+// 子組件引入 (保持原始結構)
 import Calculator from './components/Calculator';
 import PackingModal from './components/PackingModal';
 import WishlistModal from './components/WishlistModal';
@@ -101,13 +101,11 @@ export default function App() {
     backgroundColor: 'white', border: '4px solid black', boxShadow: '8px 8px 0px black', cursor: 'pointer', ...fontStyle
   };
 
-  const enlargedText: React.CSSProperties = { fontSize: '24px', fontWeight: 'bold' };
-
   return (
     <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', width: '100vw', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '20px 0', ...fontStyle, overflowX: 'hidden' }}>
       <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px', padding: '0 20px' }}>
         
-        {/* Header */}
+        {/* Header (保持原始 UI) */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '20px' }}>
           <div style={{ textAlign: 'left' }}>
             <div style={{ display: 'inline-block', transform: 'rotate(-6deg)', transformOrigin: 'left bottom' }}>
@@ -118,7 +116,7 @@ export default function App() {
             <h1 style={{ fontSize: '64px', marginTop: '8px', marginBottom: '20px', lineHeight: 1, color: 'black', transform: 'rotate(-2deg)' }}>
               哈囉<br /><span style={{ display: 'block', marginTop: '15px' }}>{currentTrip}!</span>
             </h1>
-            <button onClick={() => setActiveModal('destination')} style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '10px', ...enlargedText, border: '5px solid black' }}>
+            <button onClick={() => setActiveModal('destination')} style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '24px', fontWeight: 'bold', border: '5px solid black' }}>
               <div style={{ width: '14px', height: '14px', backgroundColor: '#3B82F6', borderRadius: '50%' }}></div>
               切換旅程
             </button>
@@ -137,7 +135,7 @@ export default function App() {
           <ArrowRight size={40} strokeWidth={4} />
         </div>
 
-        {/* 功能 Grid */}
+        {/* 功能 Grid (保持原始邏輯) */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
           <div onClick={() => setActiveModal('wish')} style={{ ...cardBase, borderRadius: '35px', padding: '20px', transform: 'rotate(-1.5deg)' }}>
             <Heart size={30} color="#EF4444" fill="#EF4444" />
@@ -161,20 +159,21 @@ export default function App() {
           </div>
         </div>
 
-        {/* 行程總覽 Modal - 修正路徑與寬度 */}
+        {/* 行程總覽 Modal - 修正路徑與版面寬度 */}
         {activeModal === 'itinerary' && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#FF9933', zIndex: 100, overflowY: 'auto' }}>
             <div style={{ maxWidth: '420px', margin: '0 auto', padding: '20px' }}>
-              <button onClick={() => setActiveModal(null)} style={{ ...cardBase, padding: '10px 24px', borderRadius: '15px', marginBottom: '20px', ...enlargedText }}>← 返回</button>
-              <h2 style={{ fontSize: '32px', marginBottom: '30px', fontWeight: 'bold', ...fontStyle }}>{currentTrip} 旅程總覽</h2>
+              <button onClick={() => setActiveModal(null)} style={{ ...cardBase, padding: '10px 24px', borderRadius: '15px', marginBottom: '20px', fontSize: '24px', fontWeight: 'bold' }}>← 返回</button>
+              <h2 style={{ fontSize: '32px', marginBottom: '30px', fontWeight: 'bold' }}>{currentTrip} 旅程總覽</h2>
+              
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 {[
-                  { id: 'flight', src: './flight_icon.png' },
-                  { id: 'map', src: './map_icon.png' },
-                  { id: 'vote', src: './vote_icon.png' },
-                  { id: 'daily', src: './daily_icon.png' },
-                  { id: 'transport', src: './transport_icon.png' },
-                  { id: 'hotel', src: './hotel_icon.png' }
+                  { id: 'flight', src: '/assets/flight_icon.png' },
+                  { id: 'map', src: '/assets/map_icon.png' },
+                  { id: 'vote', src: '/assets/vote_icon.png' },
+                  { id: 'daily', src: '/assets/daily_icon.png' },
+                  { id: 'transport', src: '/assets/transport_icon.png' },
+                  { id: 'hotel', src: '/assets/hotel_icon.png' }
                 ].map(item => (
                   <div key={item.id} onClick={() => setSubModal(item.id)} style={{ ...cardBase, borderRadius: '25px', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '150px' }}>
                     <img src={item.src} alt={item.id} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
@@ -186,7 +185,7 @@ export default function App() {
             {subModal && (
               <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#FF9933', zIndex: 200, overflowY: 'auto' }}>
                 <div style={{ maxWidth: '420px', margin: '0 auto', padding: '20px' }}>
-                  <button onClick={() => setSubModal(null)} style={{ ...cardBase, padding: '10px 24px', borderRadius: '15px', marginBottom: '20px', ...enlargedText }}>← 返回</button>
+                  <button onClick={() => setSubModal(null)} style={{ ...cardBase, padding: '10px 24px', borderRadius: '15px', marginBottom: '20px', fontSize: '24px', fontWeight: 'bold' }}>← 返回</button>
                   <div style={{ ...cardBase, borderRadius: '25px', padding: '20px', textAlign: 'center' }}>
                     <h3 style={{ fontSize: '24px', fontWeight: 'bold' }}>內容整理中...</h3>
                   </div>
@@ -196,7 +195,7 @@ export default function App() {
           </div>
         )}
 
-        {/* 基礎彈窗 */}
+        {/* 其餘子 Modal */}
         {activeModal === 'destination' && <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={(d) => { setCurrentTrip(d); syncToCloud(d); setActiveModal(null); }} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />}
         {activeModal === 'calc' && <Calculator onClose={() => setActiveModal(null)} />}
         {activeModal === 'wish' && <WishlistModal currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}

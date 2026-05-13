@@ -44,24 +44,20 @@ export default function App() {
   // --- 核心同步邏輯 ---
   const fetchLatestStatus = useCallback(async () => {
     if (!navigator.onLine) return;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
       const { data, error } = await supabase
         .from('Go_Away')
         .select('name')
         .order('created_at', { ascending: false })
-        .limit(1)
-        .abortSignal(controller.signal);
+        .limit(1);
 
       if (!error && data && data.length > 0) {
-        const lastAction = data[0];
-        if (lastAction.name !== currentTrip) {
-          setCurrentTrip(lastAction.name);
-          localStorage.setItem('current_trip', lastAction.name);
+        if (data[0].name !== currentTrip) {
+          setCurrentTrip(data[0].name);
+          localStorage.setItem('current_trip', data[0].name);
         }
       }
-    } catch (e) { console.warn("同步超時"); } finally { clearTimeout(timeoutId); }
+    } catch (e) { console.warn("同步失敗"); }
   }, [currentTrip]);
 
   const syncToCloud = async (tripName: string) => {
@@ -75,16 +71,9 @@ export default function App() {
 
   useEffect(() => {
     fetchLatestStatus();
-    const interval = setInterval(() => fetchLatestStatus(), 5000);
+    const interval = setInterval(fetchLatestStatus, 5000);
     return () => clearInterval(interval);
   }, [fetchLatestStatus]);
-
-  const handleTripChange = (dest: string) => {
-    setCurrentTrip(dest);
-    localStorage.setItem('current_trip', dest);
-    syncToCloud(dest);
-    setActiveModal(null);
-  };
 
   const updateAllStats = useCallback(() => {
     try {
@@ -100,7 +89,7 @@ export default function App() {
         const packed = packingData.filter((i: any) => i.packed).length;
         setPackingProgress(packingData.length > 0 ? Math.round((packed / packingData.length) * 100) : 0);
       }
-    } catch (e) { console.error("統計錯誤"); }
+    } catch (e) { console.error("統計更新錯誤"); }
   }, [currentTrip]);
 
   useEffect(() => {
@@ -115,11 +104,11 @@ export default function App() {
   const enlargedText: React.CSSProperties = { fontSize: '24px', fontWeight: 'bold' };
 
   return (
-    <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', ...fontStyle }}>
-      <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', width: '100vw', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '20px 0', ...fontStyle, overflowX: 'hidden' }}>
+      <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px', padding: '0 20px' }}>
         
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '20px' }}>
           <div style={{ textAlign: 'left' }}>
             <div style={{ display: 'inline-block', transform: 'rotate(-6deg)', transformOrigin: 'left bottom' }}>
               <span style={{ backgroundColor: 'black', color: 'white', fontSize: '18px', padding: '6px 16px', borderRadius: '12px', letterSpacing: '2px', fontWeight: 'bold' }}>
@@ -172,30 +161,35 @@ export default function App() {
           </div>
         </div>
 
-        {/* 行程總覽 Modal */}
+        {/* 行程總覽 Modal - 修正路徑與寬度 */}
         {activeModal === 'itinerary' && (
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, minHeight: '100vh', backgroundColor: '#FF9933', zIndex: 100, padding: '20px' }}>
-            <button onClick={() => setActiveModal(null)} style={{ ...cardBase, padding: '10px 24px', borderRadius: '15px', marginBottom: '20px', ...enlargedText }}>← 返回</button>
-            <h2 style={{ fontSize: '32px', marginBottom: '30px', fontWeight: 'bold' }}>{currentTrip} 旅程總覽</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              {[
-                { id: 'flight', img: '/flight_icon.png' },
-                { id: 'map', img: '/map_icon.png' },
-                { id: 'vote', img: '/vote_icon.png' },
-                { id: 'daily', img: '/daily_icon.png' },
-                { id: 'transport', img: '/transport_icon.png' },
-                { id: 'hotel', img: '/hotel_icon.png' }
-              ].map(item => (
-                <div key={item.id} onClick={() => setSubModal(item.id)} style={{ ...cardBase, borderRadius: '25px', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '130px' }}>
-                  <img src={item.img} alt={item.id} style={{ width: '100%', height: 'auto' }} />
-                </div>
-              ))}
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#FF9933', zIndex: 100, overflowY: 'auto' }}>
+            <div style={{ maxWidth: '420px', margin: '0 auto', padding: '20px' }}>
+              <button onClick={() => setActiveModal(null)} style={{ ...cardBase, padding: '10px 24px', borderRadius: '15px', marginBottom: '20px', ...enlargedText }}>← 返回</button>
+              <h2 style={{ fontSize: '32px', marginBottom: '30px', fontWeight: 'bold', ...fontStyle }}>{currentTrip} 旅程總覽</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                {[
+                  { id: 'flight', src: './flight_icon.png' },
+                  { id: 'map', src: './map_icon.png' },
+                  { id: 'vote', src: './vote_icon.png' },
+                  { id: 'daily', src: './daily_icon.png' },
+                  { id: 'transport', src: './transport_icon.png' },
+                  { id: 'hotel', src: './hotel_icon.png' }
+                ].map(item => (
+                  <div key={item.id} onClick={() => setSubModal(item.id)} style={{ ...cardBase, borderRadius: '25px', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '150px' }}>
+                    <img src={item.src} alt={item.id} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
+                  </div>
+                ))}
+              </div>
             </div>
+            
             {subModal && (
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, minHeight: '100vh', backgroundColor: '#FF9933', zIndex: 200, padding: '20px' }}>
-                <button onClick={() => setSubModal(null)} style={{ ...cardBase, padding: '10px 24px', borderRadius: '15px', marginBottom: '20px', ...enlargedText }}>← 返回</button>
-                <div style={{ ...cardBase, borderRadius: '25px', padding: '20px' }}>
-                  <h3 style={{ fontSize: '24px', fontWeight: 'bold' }}>載入中...</h3>
+              <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#FF9933', zIndex: 200, overflowY: 'auto' }}>
+                <div style={{ maxWidth: '420px', margin: '0 auto', padding: '20px' }}>
+                  <button onClick={() => setSubModal(null)} style={{ ...cardBase, padding: '10px 24px', borderRadius: '15px', marginBottom: '20px', ...enlargedText }}>← 返回</button>
+                  <div style={{ ...cardBase, borderRadius: '25px', padding: '20px', textAlign: 'center' }}>
+                    <h3 style={{ fontSize: '24px', fontWeight: 'bold' }}>內容整理中...</h3>
+                  </div>
                 </div>
               </div>
             )}
@@ -203,7 +197,7 @@ export default function App() {
         )}
 
         {/* 基礎彈窗 */}
-        {activeModal === 'destination' && <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={handleTripChange} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />}
+        {activeModal === 'destination' && <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={(d) => { setCurrentTrip(d); syncToCloud(d); setActiveModal(null); }} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />}
         {activeModal === 'calc' && <Calculator onClose={() => setActiveModal(null)} />}
         {activeModal === 'wish' && <WishlistModal currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}
         {activeModal === 'packing' && <PackingModal currentTrip={currentTrip} onClose={() => { updateAllStats(); setActiveModal(null); }} />}

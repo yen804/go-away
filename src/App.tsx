@@ -101,6 +101,15 @@ export default function App() {
     backgroundColor: 'white', border: '4px solid black', boxShadow: '8px 8px 0px black', cursor: 'pointer', ...fontStyle
   };
 
+  // 處理 6 大按鈕點擊
+  const handleSubButtonClick = (id: string) => {
+    if (id === 'flight') {
+      window.open('https://www.appsheet.com/start/6a31ffaf-6bdb-4b55-af3f-1aa6be918736', '_blank');
+    } else {
+      setSubModal(id);
+    }
+  };
+
   return (
     <div style={{ backgroundColor: '#FF9933', minHeight: '100vh', width: '100vw', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '20px 0', ...fontStyle, overflowX: 'hidden' }}>
       <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '20px', padding: '0 20px' }}>
@@ -159,7 +168,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* 行程總覽 Modal - 修正路徑與版面寬度 */}
+        {/* 行程總覽 Modal */}
         {activeModal === 'itinerary' && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#FF9933', zIndex: 100, overflowY: 'auto' }}>
             <div style={{ maxWidth: '420px', margin: '0 auto', padding: '20px' }}>
@@ -175,7 +184,7 @@ export default function App() {
                   { id: 'transport', src: '/assets/transport_icon.png' },
                   { id: 'hotel', src: '/assets/hotel_icon.png' }
                 ].map(item => (
-                  <div key={item.id} onClick={() => setSubModal(item.id)} style={{ ...cardBase, borderRadius: '25px', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '150px' }}>
+                  <div key={item.id} onClick={() => handleSubButtonClick(item.id)} style={{ ...cardBase, borderRadius: '25px', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '150px' }}>
                     <img src={item.src} alt={item.id} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
                   </div>
                 ))}

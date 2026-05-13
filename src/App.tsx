@@ -9,7 +9,7 @@ import WishlistModal from './components/WishlistModal';
 import DestinationModal from './components/DestinationModal';
 import BuyBuyBuyModal from './components/BuyBuyBuyModal';
 import ToolModal from './components/ToolModal';
-import ItineraryModal from './components/ItineraryModal'; // 新增引入
+import ItineraryModal from './components/Itinerary/ItineraryModal'; // 新增引入
 
 // 初始化 Supabase (保持原始配置)
 const supabase = createClient(

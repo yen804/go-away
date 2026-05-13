@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Map, Heart, Luggage, ShoppingBag, Calculator as CalcIcon, ArrowRight, Wrench } from 'lucide-react';
 
-// 子組件引入 (假設路徑不變)
+// 子組件引入 (請確保路徑與您的專案結構一致)
 import Calculator from './components/Calculator';
 import PackingModal from './components/PackingModal';
 import WishlistModal from './components/WishlistModal';
@@ -55,28 +55,37 @@ export default function App() {
     updateAllStats();
   }, [trips, currentTrip, activeModal, updateAllStats]);
 
-  // 通用卡片與按鈕樣式
+  // 通用卡片樣式：白底、黑框、右下陰影
   const cardBase: React.CSSProperties = {
-    backgroundColor: 'white', border: '4px solid black', boxShadow: '6px 6px 0px black', cursor: 'pointer', ...fontStyle
+    backgroundColor: 'white', 
+    border: '4px solid black', 
+    boxShadow: '8px 8px 0px black', 
+    cursor: 'pointer', 
+    ...fontStyle
   };
 
-  // 文字放大 20% 樣式
+  // 文字放大 20% 樣式 (由原本約 20px 調整為 24px)
   const enlargedTextStyle = { fontSize: '24px', fontWeight: 'bold' };
 
   return (
     <div style={{ backgroundColor: '#e2e8f0', minHeight: '100vh', display: 'flex', justifyContent: 'center', ...fontStyle }}>
       <div style={{ width: '100%', maxWidth: '420px', minHeight: '100vh', backgroundColor: '#FF9933', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative' }}>
         
-        {/* Header */}
+        {/* Header 區塊 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ transform: 'rotate(-6deg)' }}>
               <span style={{ backgroundColor: 'black', color: 'white', fontSize: '18px', padding: '6px 16px', borderRadius: '12px', fontWeight: 'bold' }}>離家出走計劃中</span>
             </div>
             <h1 style={{ fontSize: '64px', marginTop: '15px', color: 'black', lineHeight: 1 }}>哈囉<br />{currentTrip}!</h1>
-            {/* 1. 切換旅程文字放大 20% */}
-            <button onClick={() => setActiveModal('destination')} style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', ...enlargedTextStyle }}>
-              <div style={{ width: '12px', height: '12px', backgroundColor: '#3B82F6', borderRadius: '50%' }}></div>切換旅程
+            
+            {/* 切換旅程：文字放大 20% */}
+            <button 
+              onClick={() => setActiveModal('destination')} 
+              style={{ ...cardBase, borderRadius: '25px', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', ...enlargedTextStyle }}
+            >
+              <div style={{ width: '12px', height: '12px', backgroundColor: '#3B82F6', borderRadius: '50%' }}></div>
+              切換旅程
             </button>
           </div>
           <div onClick={() => setActiveModal('calc')} style={{ ...cardBase, padding: '12px', borderRadius: '20px' }}><CalcIcon size={28} /></div>
@@ -91,7 +100,7 @@ export default function App() {
           <ArrowRight size={36} strokeWidth={3} />
         </div>
 
-        {/* 功能網格 (主頁面) */}
+        {/* 首頁功能網格 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
           <div onClick={() => setActiveModal('wish')} style={{ ...cardBase, borderRadius: '30px', padding: '20px' }}>
             <Heart size={28} color="#EF4444" fill="#EF4444" />
@@ -116,44 +125,58 @@ export default function App() {
           </div>
         </div>
 
-        {/* 行程總覽 Modal */}
+        {/* 旅程總覽 Modal */}
         {activeModal === 'itinerary' && (
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, minHeight: '100vh', backgroundColor: '#FF9933', zIndex: 100, padding: '20px' }}>
-            {/* 1. 返回文字放大 20% */}
-            <button onClick={() => setActiveModal(null)} style={{ ...cardBase, padding: '10px 20px', borderRadius: '15px', marginBottom: '20px', ...enlargedTextStyle }}>← 返回</button>
-            <h2 style={{ fontSize: '32px', marginBottom: '30px', fontWeight: 'bold' }}>{currentTrip} 旅程總覽</h2>
             
-            {/* 2. 6 個按鈕改回圓角黑框白底，拿掉說明文字 */}
+            {/* 返回按鈕：文字放大 20% */}
+            <button 
+              onClick={() => setActiveModal(null)} 
+              style={{ ...cardBase, padding: '10px 20px', borderRadius: '15px', marginBottom: '20px', ...enlargedTextStyle }}
+            >
+              ← 返回
+            </button>
+            
+            <h2 style={{ fontSize: '32px', marginBottom: '30px', fontWeight: 'bold' }}>旅程總覽</h2>
+            
+            {/* 6 個功能按鈕：圓角、黑框、白底、無說明文字 */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               {[
-                { id: 'flight', img: '/assets/flight_icon.png' },
-                { id: 'map', img: '/assets/map_icon.png' },
-                { id: 'vote', img: '/assets/vote_icon.png' },
-                { id: 'daily', img: '/assets/daily_icon.png' },
-                { id: 'transport', img: '/assets/transport_icon.png' },
-                { id: 'hotel', img: '/assets/hotel_icon.png' }
+                { id: 'flight', img: '/flight_icon.png' },
+                { id: 'map', img: '/map_icon.png' },
+                { id: 'vote', img: '/vote_icon.png' },
+                { id: 'daily', img: '/daily_icon.png' },
+                { id: 'transport', img: '/transport_icon.png' },
+                { id: 'hotel', img: '/hotel_icon.png' }
               ].map(item => (
-                <div key={item.id} onClick={() => setSubModal(item.id)} style={{ ...cardBase, borderRadius: '25px', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '140px' }}>
+                <div 
+                  key={item.id} 
+                  onClick={() => setSubModal(item.id)} 
+                  style={{ ...cardBase, borderRadius: '25px', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '120px' }}
+                >
                   <img src={item.img} alt={item.id} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
-                  {/* 說明文字已移除 */}
                 </div>
               ))}
             </div>
 
-            {/* 航班細節 (範例) */}
-            {subModal === 'flight' && (
+            {/* 三層子頁面範例 (例如航班資訊) */}
+            {subModal && (
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, minHeight: '100vh', backgroundColor: '#FF9933', zIndex: 200, padding: '20px' }}>
-                <button onClick={() => setSubModal(null)} style={{ ...cardBase, padding: '10px 20px', borderRadius: '15px', marginBottom: '20px', ...enlargedTextStyle }}>← 返回</button>
-                <h3 style={{ fontSize: '28px', marginBottom: '20px', fontWeight: 'bold' }}>✈️ 航班資訊</h3>
+                <button 
+                  onClick={() => setSubModal(null)} 
+                  style={{ ...cardBase, padding: '10px 20px', borderRadius: '15px', marginBottom: '20px', ...enlargedTextStyle }}
+                >
+                  ← 返回
+                </button>
                 <div style={{ backgroundColor: 'white', border: '4px solid black', borderRadius: '25px', padding: '20px' }}>
-                  <p>載入中...</p>
+                  <h3 style={{ fontSize: '24px', fontWeight: 'bold' }}>詳細資訊正在規劃中...</h3>
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* 其他基礎彈窗 */}
+        {/* 其他基礎 Modal */}
         {activeModal === 'destination' && <DestinationModal trips={trips} currentTrip={currentTrip} onSelect={(dest) => { setCurrentTrip(dest); setActiveModal(null); }} onAdd={(n) => setTrips([...trips, n])} onDelete={(t) => setTrips(trips.filter(x => x !== t))} onClose={() => setActiveModal(null)} />}
         {activeModal === 'calc' && <Calculator onClose={() => setActiveModal(null)} />}
         {activeModal === 'wish' && <WishlistModal currentTrip={currentTrip} onClose={() => setActiveModal(null)} />}
